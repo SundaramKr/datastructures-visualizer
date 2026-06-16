@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Structures Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <section id="screen-home" class="screen active">
+      <div class="screen-content">
+        <h1 class="app-title">Data Structures Visualizer</h1>
+        <p class="app-subtitle">Starting with arrays and linked lists</p>
+        <button class="card card-home" id="btn-enter" aria-label="Enter Data Structures">
+          <span class="card-icon">📦</span>
+          <span class="card-label">Data Structures</span>
+          <span class="card-hint">Click to begin</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="screen-modules" class="screen">
+      <div class="screen-content">
+        <button class="btn-back" id="btn-back-modules" aria-label="Back to home">← Back</button>
+        <h2 class="screen-title">Choose a Structure</h2>
+        <div class="module-grid">
+          <button class="card card-module" data-module="array">
+            <span class="card-icon">📊</span>
+            <span class="card-label">Arrays</span>
+            <span class="card-desc">Contiguous memory, indexed access</span>
+          </button>
+          <button class="card card-module" data-module="linkedlist">
+            <span class="card-icon">🔗</span>
+            <span class="card-label">Linked Lists</span>
+            <span class="card-desc">Nodes connected by pointers</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-visualizer" class="screen">
+      <header class="viz-header">
+        <button class="btn-back" id="btn-back-viz" aria-label="Back to modules">← Back</button>
+        <h2 class="viz-title" id="viz-title">Array Visualizer</h2>
+      </header>
+
+      <main class="whiteboard">
+        <div class="status-bar" id="status-bar">
+          <span class="status-message" id="status-message">Ready to visualize.</span>
+        </div>
+
+        <div class="viz-container" id="viz-container"></div>
+
+        <div class="info-strip" id="info-strip"></div>
+
+        <div class="controls-bar">
+          <button class="btn-action" id="btn-traverse">▶ Traverse</button>
+          <button class="btn-action" id="btn-search">🔍 Search</button>
+          <button class="btn-action" id="btn-reset">↺ Reset</button>
+          <div class="speed-group">
+            <button class="btn-speed" data-speed="slow">Slow</button>
+            <button class="btn-speed active" data-speed="normal">Normal</button>
+            <button class="btn-speed" data-speed="fast">Fast</button>
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+
+  <dialog class="modal" id="input-modal">
+    <form method="dialog" class="modal-content" id="input-form">
+      <h3 id="modal-title">Configure Array</h3>
+      <p class="modal-desc" id="modal-desc">Enter comma-separated values or use the default.</p>
+      <div class="modal-field" id="modal-size-field">
+        <label class="modal-label" for="modal-size" id="modal-size-label">Array Size</label>
+        <input type="number" id="modal-size" class="modal-input" min="1" max="20" value="5" autocomplete="off">
+      </div>
+      <label class="modal-label" for="modal-input" id="modal-label">Values</label>
+      <input type="text" id="modal-input" class="modal-input" autocomplete="off">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="modal-cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="modal-ok">Visualize</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="operation-modal">
+    <form method="dialog" class="modal-content" id="operation-form">
+      <h3 id="operation-title">Operation</h3>
+      <p class="modal-desc" id="operation-desc"></p>
+      <label class="modal-label" for="operation-input" id="operation-label">Value</label>
+      <input type="text" id="operation-input" class="modal-input" autocomplete="off">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="operation-cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="operation-ok">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="context-menu" id="context-menu" role="menu" hidden>
+    <button class="context-item" data-action="insert-before">Insert Before</button>
+    <button class="context-item" data-action="insert-after">Insert After</button>
+    <button class="context-item" data-action="delete">Delete</button>
+    <button class="context-item" data-action="update">Update Value</button>
+    <button class="context-item" data-action="highlight">Highlight</button>
+  </div>
+
+  <div class="overlay" id="overlay" hidden></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
