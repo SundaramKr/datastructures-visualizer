@@ -2,6 +2,207 @@
  * Data Structures Visualizer
  */
 
+// C Code Templates
+const CCodeTemplates = {
+  array: {
+    create: (values, capacity) => `// Create array with ${values.length} elements (capacity: ${capacity})
+int main() {
+    int capacity = ${capacity};
+    int size = ${values.length};
+    int arr[${capacity}] = {${values.join(', ')}};
+    
+    // Array is now ready for operations
+    return 0;
+}`,
+    insert: (index, value, position) => `// Insert ${value} at index ${position === 'before' ? index : index + 1}
+void insertAt(int arr[], int *size, int capacity, int index, int value) {
+    if (*size >= capacity) {
+        printf("Array is full\\n");
+        return;
+    }
+    
+    // Shift elements to the right
+    for (int i = *size; i > index; i--) {
+        arr[i] = arr[i - 1];
+    }
+    
+    // Insert the new element
+    arr[index] = value;
+    (*size)++;
+}`,
+    delete: (index) => `// Delete element at index ${index}
+void deleteAt(int arr[], int *size, int index) {
+    if (index < 0 || index >= *size) {
+        printf("Invalid index\\n");
+        return;
+    }
+    
+    // Shift elements to the left
+    for (int i = index; i < *size - 1; i++) {
+        arr[i] = arr[i + 1];
+    }
+    
+    (*size)--;
+}`,
+    update: (index, value) => `// Update element at index ${index} to ${value}
+void updateAt(int arr[], int size, int index, int value) {
+    if (index < 0 || index >= size) {
+        printf("Invalid index\\n");
+        return;
+    }
+    
+    arr[index] = value;
+}`,
+    traverse: () => `// Traverse the array
+void traverse(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\\n");
+}`,
+    search: (target) => `// Search for ${target} in the array
+int search(int arr[], int size, int target) {
+    for (int i = 0; i < size; i++) {
+        if (arr[i] == target) {
+            return i;  // Found at index i
+        }
+    }
+    return -1;  // Not found
+}`,
+    highlight: (index) => `// Access element at index ${index}
+int getElement(int arr[], int size, int index) {
+    if (index < 0 || index >= size) {
+        printf("Invalid index\\n");
+        return -1;
+    }
+    return arr[index];
+}`
+  },
+  linkedlist: {
+    create: (values) => `// Create linked list with ${values.length} nodes
+typedef struct Node {
+    int data;
+    struct Node* next;
+} Node;
+
+Node* createLinkedList(int values[], int size) {
+    if (size == 0) return NULL;
+    
+    Node* head = (Node*)malloc(sizeof(Node));
+    head->data = values[0];
+    head->next = NULL;
+    
+    Node* current = head;
+    for (int i = 1; i < size; i++) {
+        current->next = (Node*)malloc(sizeof(Node));
+        current = current->next;
+        current->data = values[i];
+        current->next = NULL;
+    }
+    
+    return head;
+}
+
+int main() {
+    int values[] = {${values.join(', ')}};
+    int size = ${values.length};
+    Node* head = createLinkedList(values, size);
+    
+    // Linked list is now ready for operations
+    return 0;
+}`,
+    insert: (index, value, position) => `// Insert ${value} ${position === 'before' ? 'before' : 'after'} node ${index}
+typedef struct Node {
+    int data;
+    struct Node* next;
+} Node;
+
+void insertAt(Node** head, int index, int value, int position) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = value;
+    
+    if (index == 0 && position == 'before') {
+        newNode->next = *head;
+        *head = newNode;
+        return;
+    }
+    
+    Node* current = *head;
+    for (int i = 0; i < index && current->next; i++) {
+        current = current->next;
+    }
+    
+    newNode->next = current->next;
+    current->next = newNode;
+}`,
+    delete: (index) => `// Delete node at index ${index}
+void deleteAt(Node** head, int index) {
+    if (*head == NULL) return;
+    
+    Node* temp = *head;
+    
+    if (index == 0) {
+        *head = temp->next;
+        free(temp);
+        return;
+    }
+    
+    for (int i = 0; temp != NULL && i < index - 1; i++) {
+        temp = temp->next;
+    }
+    
+    if (temp == NULL || temp->next == NULL) return;
+    
+    Node* next = temp->next->next;
+    free(temp->next);
+    temp->next = next;
+}`,
+    update: (index, value) => `// Update node at index ${index} to ${value}
+void updateAt(Node* head, int index, int value) {
+    Node* current = head;
+    for (int i = 0; i < index && current != NULL; i++) {
+        current = current->next;
+    }
+    
+    if (current != NULL) {
+        current->data = value;
+    }
+}`,
+    traverse: () => `// Traverse the linked list
+void traverse(Node* head) {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%d ", current->data);
+        current = current->next;
+    }
+    printf("\\n");
+}`,
+    search: (target) => `// Search for ${target} in the linked list
+int search(Node* head, int target) {
+    Node* current = head;
+    int index = 0;
+    
+    while (current != NULL) {
+        if (current->data == target) {
+            return index;
+        }
+        current = current->next;
+        index++;
+    }
+    
+    return -1;  // Not found
+}`,
+    highlight: (index) => `// Access node at index ${index}
+Node* getNode(Node* head, int index) {
+    Node* current = head;
+    for (int i = 0; i < index && current != NULL; i++) {
+        current = current->next;
+    }
+    return current;
+}`
+  }
+};
+
 class AnimationController {
   constructor() {
     this.speeds = { slow: 900, normal: 450, fast: 180 };
@@ -563,6 +764,9 @@ class App {
       btnTraverse: document.getElementById('btn-traverse'),
       btnSearch: document.getElementById('btn-search'),
       btnReset: document.getElementById('btn-reset'),
+      codePanel: document.getElementById('code-panel'),
+      codePanelContent: document.getElementById('code-panel-content'),
+      codePanelClose: document.getElementById('code-panel-close'),
     };
 
     this.initialValues = [];
@@ -635,7 +839,10 @@ class App {
     });
 
     this.elements.btnTraverse.addEventListener('click', () => {
-      if (this.visualizer) this.visualizer.guard(() => this.visualizer.traverse());
+      if (this.visualizer) {
+        this.updateCodePanel('traverse');
+        this.visualizer.guard(() => this.visualizer.traverse());
+      }
     });
 
     this.elements.btnSearch.addEventListener('click', () => {
@@ -644,18 +851,56 @@ class App {
         'Search',
         `Find value in ${this.currentModule === 'array' ? 'array' : 'linked list'}`,
         this.visualizer.searchDefault,
-        (val) => this.visualizer.guard(() => this.visualizer.search(val))
+        (val) => {
+          this.updateCodePanel('search', val);
+          this.visualizer.guard(() => this.visualizer.search(val));
+        }
       );
     });
 
     this.elements.btnReset.addEventListener('click', () => {
-      if (this.visualizer) this.visualizer.reset([...this.initialValues]);
+      if (this.visualizer) {
+        this.visualizer.reset([...this.initialValues]);
+        this.elements.codePanelContent.textContent = '// Click on an operation to see the C code';
+      }
+    });
+
+    this.elements.codePanelClose.addEventListener('click', () => {
+      this.elements.codePanelContent.textContent = '// Click on an operation to see the C code';
     });
   }
 
   showScreen(name) {
     Object.values(this.screens).forEach((s) => s.classList.remove('active'));
     this.screens[name].classList.add('active');
+  }
+
+  updateCodePanel(operation, value = null, index = null, position = null, values = null, capacity = null) {
+    if (!this.currentModule) return;
+
+    const templates = CCodeTemplates[this.currentModule];
+    if (!templates || !templates[operation]) return;
+
+    let code;
+    if (operation === 'create') {
+      code = templates.create(values, capacity);
+    } else if (operation === 'insert') {
+      code = templates.insert(index, value, position);
+    } else if (operation === 'delete') {
+      code = templates.delete(index);
+    } else if (operation === 'update') {
+      code = templates.update(index, value);
+    } else if (operation === 'search') {
+      code = templates.search(value);
+    } else if (operation === 'traverse') {
+      code = templates.traverse();
+    } else if (operation === 'highlight') {
+      code = templates.highlight(index);
+    }
+
+    if (code) {
+      this.elements.codePanelContent.textContent = code;
+    }
   }
 
   selectModule(module) {
@@ -692,11 +937,13 @@ class App {
       this.visualizer = new ArrayVisualizer(vizContainer, this.anim, statusMessage, infoStrip);
       this.visualizer.onCellClick = (index) => this.showContextMenu(index, 'array');
       this.visualizer.init(values, capacity);
+      this.updateCodePanel('create', null, null, null, values, capacity);
     } else {
       this.elements.vizTitle.textContent = 'Linked List Visualizer';
       this.visualizer = new LinkedListVisualizer(vizContainer, this.anim, statusMessage, infoStrip);
       this.visualizer.onNodeClick = (index) => this.showContextMenu(index, 'linkedlist');
       this.visualizer.init(values);
+      this.updateCodePanel('create', null, null, null, values, null);
     }
   }
 
@@ -754,28 +1001,33 @@ class App {
 
     switch (action) {
       case 'insert-before':
-        this._promptOperation('Insert Before', 'Value to insert?', '99', (val) =>
-          this.visualizer.guard(() => this.visualizer.insertAt(index, val, 'before'))
-        );
+        this._promptOperation('Insert Before', 'Value to insert?', '99', (val) => {
+          this.updateCodePanel('insert', val, index, 'before');
+          this.visualizer.guard(() => this.visualizer.insertAt(index, val, 'before'));
+        });
         break;
       case 'insert-after':
-        this._promptOperation('Insert After', 'Value to insert?', '99', (val) =>
-          this.visualizer.guard(() => this.visualizer.insertAt(index, val, 'after'))
-        );
+        this._promptOperation('Insert After', 'Value to insert?', '99', (val) => {
+          this.updateCodePanel('insert', val, index, 'after');
+          this.visualizer.guard(() => this.visualizer.insertAt(index, val, 'after'));
+        });
         break;
       case 'delete':
+        this.updateCodePanel('delete', null, index);
         this.visualizer.guard(() => this.visualizer.deleteAt(index));
         break;
       case 'update': {
         const current = this.currentModule === 'array'
           ? this.visualizer.data[index]
           : this.visualizer.nodes[index].value;
-        this._promptOperation('Update Value', 'New value?', String(current), (val) =>
-          this.visualizer.guard(() => this.visualizer.updateAt(index, val))
-        );
+        this._promptOperation('Update Value', 'New value?', String(current), (val) => {
+          this.updateCodePanel('update', val, index);
+          this.visualizer.guard(() => this.visualizer.updateAt(index, val));
+        });
         break;
       }
       case 'highlight':
+        this.updateCodePanel('highlight', null, index);
         this.visualizer.highlightAt(index);
         break;
     }

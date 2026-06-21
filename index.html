@@ -46,24 +46,34 @@
       </header>
 
       <main class="whiteboard">
-        <div class="status-bar" id="status-bar">
-          <span class="status-message" id="status-message">Ready to visualize.</span>
-        </div>
+        <div class="whiteboard-main">
+          <div class="status-bar" id="status-bar">
+            <span class="status-message" id="status-message">Ready to visualize.</span>
+          </div>
 
-        <div class="viz-container" id="viz-container"></div>
+          <div class="viz-container" id="viz-container"></div>
 
-        <div class="info-strip" id="info-strip"></div>
+          <div class="info-strip" id="info-strip"></div>
 
-        <div class="controls-bar">
-          <button class="btn-action" id="btn-traverse">▶ Traverse</button>
-          <button class="btn-action" id="btn-search">🔍 Search</button>
-          <button class="btn-action" id="btn-reset">↺ Reset</button>
-          <div class="speed-group">
-            <button class="btn-speed" data-speed="slow">Slow</button>
-            <button class="btn-speed active" data-speed="normal">Normal</button>
-            <button class="btn-speed" data-speed="fast">Fast</button>
+          <div class="controls-bar">
+            <button class="btn-action" id="btn-traverse">▶ Traverse</button>
+            <button class="btn-action" id="btn-search">🔍 Search</button>
+            <button class="btn-action" id="btn-reset">↺ Reset</button>
+            <div class="speed-group">
+              <button class="btn-speed" data-speed="slow">Slow</button>
+              <button class="btn-speed active" data-speed="normal">Normal</button>
+              <button class="btn-speed" data-speed="fast">Fast</button>
+            </div>
           </div>
         </div>
+
+        <aside class="code-panel" id="code-panel">
+          <div class="code-panel-header">
+            <h3 class="code-panel-title">C Code</h3>
+            <button class="code-panel-close" id="code-panel-close">×</button>
+          </div>
+          <pre class="code-panel-content" id="code-panel-content">// Click on an operation to see the C code</pre>
+        </aside>
       </main>
     </section>
   </div>
