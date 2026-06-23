@@ -238,7 +238,7 @@ const SlidesContent = {
         <div class="slide-section">
           <h3 class="slide-section-title">Memory Diagram</h3>
           <div class="slide-memory-diagram">
-            <div style="text-align: center; margin-bottom: 8px;">
+            <div style="display: inline-flex;">
               <strong>HEAD →</strong>
             </div>
             <div class="memory-cell">
@@ -259,7 +259,7 @@ const SlidesContent = {
               <span class="memory-address">Next: NULL</span>
             </div>
             <span class="memory-arrow">→</span>
-            <div style="font-weight: 600; color: var(--gray-500);">NULL</div>
+            <div style="display: inline-flex; color: var(--gray-500);"><strong>NULL</strong></div>
           </div>
           <p class="slide-text">Nodes can be at any memory address. The "next" pointer links them together. The last node points to NULL, indicating the end of the list.</p>
         </div>
@@ -473,6 +473,196 @@ Node* getNode(Node* head, int index) {
   }
 };
 
+// Python Code Templates
+const PythonCodeTemplates = {
+  array: {
+    create: (values, capacity) => `# Create array with ${values.length} elements (capacity: ${capacity})
+def main():
+    arr = [${values.join(', ')}]
+    # Python lists are dynamic, but we can track capacity
+    capacity = ${capacity}
+    
+    # Array is now ready for operations
+    return arr
+
+if __name__ == "__main__":
+    main()`,
+    insert: (index, value, position) => `# Insert ${value} at index ${position === 'before' ? index : index + 1}
+def insert_at(arr, index, value):
+    # Python handles shifting automatically
+    arr.insert(index, value)
+    return arr`,
+    delete: (index) => `# Delete element at index ${index}
+def delete_at(arr, index):
+    if 0 <= index < len(arr):
+        # Python handles shifting automatically
+        del arr[index]
+    return arr`,
+    update: (index, value) => `# Update element at index ${index} to ${value}
+def update_at(arr, index, value):
+    if 0 <= index < len(arr):
+        arr[index] = value
+    return arr`,
+    traverse: () => `# Traverse the array
+def traverse(arr):
+    for element in arr:
+        print(element, end=' ')
+    print()`,
+    search: (target) => `# Search for ${target} in the array
+def search(arr, target):
+    for i, element in enumerate(arr):
+        if element == target:
+            return i  # Found at index i
+    return -1  # Not found`,
+    highlight: (index) => `# Access element at index ${index}
+def get_element(arr, index):
+    if 0 <= index < len(arr):
+        return arr[index]
+    return None`
+  },
+  linkedlist: {
+    create: (values) => `# Create linked list with ${values.length} nodes
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+def create_linked_list(values):
+    if not values:
+        return None
+    
+    head = Node(values[0])
+    current = head
+    
+    for value in values[1:]:
+        current.next = Node(value)
+        current = current.next
+    
+    return head
+
+def main():
+    values = [${values.join(', ')}]
+    head = create_linked_list(values)
+    
+    # Linked list is now ready for operations
+    return head
+
+if __name__ == "__main__":
+    main()`,
+    insert: (index, value, position) => `# Insert ${value} ${position === 'before' ? 'before' : 'after'} node ${index}
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+def insert_at(head, index, value, position='after'):
+    new_node = Node(value)
+    
+    if index == 0 and position == 'before':
+        new_node.next = head
+        return new_node
+    
+    current = head
+    for i in range(index):
+        if current.next is None:
+            break
+        current = current.next
+    
+    if position == 'after':
+        new_node.next = current.next
+        current.next = new_node
+    else:
+        # Insert before current node
+        new_node.next = current
+        # Need to find previous node to update its next pointer
+        # Simplified: assumes we have access to previous node
+    
+    return head`,
+    delete: (index) => `# Delete node at index ${index}
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+def delete_at(head, index):
+    if head is None:
+        return None
+    
+    if index == 0:
+        return head.next
+    
+    current = head
+    for i in range(index - 1):
+        if current.next is None:
+            return head
+        current = current.next
+    
+    if current.next is not None:
+        current.next = current.next.next
+    
+    return head`,
+    update: (index, value) => `# Update node at index ${index} to ${value}
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+def update_at(head, index, value):
+    current = head
+    for i in range(index):
+        if current is None:
+            return head
+        current = current.next
+    
+    if current is not None:
+        current.data = value
+    
+    return head`,
+    traverse: () => `# Traverse the linked list
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+def traverse(head):
+    current = head
+    while current is not None:
+        print(current.data, end=' ')
+        current = current.next
+    print()`,
+    search: (target) => `# Search for ${target} in the linked list
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+def search(head, target):
+    current = head
+    index = 0
+    
+    while current is not None:
+        if current.data == target:
+            return index
+        current = current.next
+        index += 1
+    
+    return -1  # Not found`,
+    highlight: (index) => `# Access node at index ${index}
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+def get_node(head, index):
+    current = head
+    for i in range(index):
+        if current is None:
+            return None
+        current = current.next
+    return current`
+  }
+};
+
 class AnimationController {
   constructor() {
     this.speeds = { slow: 900, normal: 450, fast: 180 };
@@ -556,6 +746,7 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   render() {
+    this.clearInfo();
     let html = `
       <div class="array-viz">
         <div class="array-meta">
@@ -617,6 +808,7 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   async insertAt(index, value, position) {
+    this.clearInfo();
     if (this.data.length >= this.capacity) {
       this.setStatus('Array is full. Cannot insert more elements.');
       return;
@@ -645,6 +837,7 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   async deleteAt(index) {
+    this.clearInfo();
     if (index < 0 || index >= this.data.length) return;
 
     this.setStatus(`Deleting element at index ${index}…`);
@@ -665,6 +858,7 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   async updateAt(index, value) {
+    this.clearInfo();
     const oldVal = this.data[index];
     this.setStatus(`Updating index ${index} from ${oldVal} to ${value}…`);
     this.highlightCell(index, 'visiting');
@@ -678,6 +872,7 @@ class ArrayVisualizer extends BaseVisualizer {
 
   highlightAt(index) {
     this.clearHighlights('highlighted', 'visiting', 'comparing', 'found');
+    this.clearInfo();
     this.highlightCell(index, 'highlighted');
     this.setActiveIndex(index);
     this.setInfo([
@@ -804,6 +999,7 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   render() {
+    this.clearInfo();
     const headTarget = this.head ? this.head.address : 'null';
 
     let html = `
@@ -861,6 +1057,7 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   async insertAt(index, value, position) {
+    this.clearInfo();
     const insertIdx = position === 'before' ? index : index + 1;
     const newNode = new LinkedListNode(value, this._uniqueAddress());
 
@@ -897,6 +1094,7 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   async deleteAt(index) {
+    this.clearInfo();
     if (index < 0 || index >= this.nodes.length) return;
 
     const removed = this.nodes[index];
@@ -926,6 +1124,7 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   async updateAt(index, value) {
+    this.clearInfo();
     const oldVal = this.nodes[index].value;
     this.setStatus(`Updating node at ${this.nodes[index].address} from ${oldVal} to ${value}…`);
     this.highlightNode(index, 'visiting');
@@ -939,6 +1138,7 @@ class LinkedListVisualizer extends BaseVisualizer {
 
   highlightAt(index) {
     this.clearHighlights('highlighted', 'visiting', 'comparing', 'found');
+    this.clearInfo();
     this.highlightNode(index, 'highlighted');
     const node = this.nodes[index];
     this.setInfo([
@@ -1006,6 +1206,8 @@ class App {
     this.visualizer = null;
     this.contextTarget = null;
     this._operationCallback = null;
+    this.currentLanguage = 'c';
+    this.currentOperation = null;
 
     this.screens = {
       home: document.getElementById('screen-home'),
@@ -1038,6 +1240,7 @@ class App {
       codePanel: document.getElementById('code-panel'),
       codePanelContent: document.getElementById('code-panel-content'),
       codePanelClose: document.getElementById('code-panel-close'),
+      codePanelTitle: document.getElementById('code-panel-title'),
       slidesTitle: document.getElementById('slides-title'),
       slideContent: document.getElementById('slide-content'),
       slideIndicator: document.getElementById('slide-indicator'),
@@ -1063,7 +1266,7 @@ class App {
     document.getElementById('btn-back-viz').addEventListener('click', () => {
       this.anim.abort();
       this.hideContextMenu();
-      this.showScreen('modules');
+      this.showScreen('slides');
     });
 
     document.querySelectorAll('.card-module').forEach((card) => {
@@ -1145,12 +1348,32 @@ class App {
     this.elements.btnReset.addEventListener('click', () => {
       if (this.visualizer) {
         this.visualizer.reset([...this.initialValues]);
-        this.elements.codePanelContent.textContent = '// Click on an operation to see the C code';
+        this.elements.codePanelContent.textContent = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
       }
     });
 
     this.elements.codePanelClose.addEventListener('click', () => {
-      this.elements.codePanelContent.textContent = '// Click on an operation to see the C code';
+      this.elements.codePanelContent.textContent = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
+    });
+
+    // Language switcher event listeners
+    document.querySelectorAll('.lang-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const lang = btn.dataset.lang;
+        this.currentLanguage = lang;
+        
+        // Update active state
+        document.querySelectorAll('.lang-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Refresh code panel with current operation in new language
+        if (this.currentOperation) {
+          const { operation, value, index, position, values, capacity } = this.currentOperation;
+          this.updateCodePanel(operation, value, index, position, values, capacity);
+        } else if (this.visualizer && this.currentModule) {
+          this.elements.codePanelContent.textContent = `// Click on an operation to see the ${lang === 'python' ? 'Python' : 'C'} code`;
+        }
+      });
     });
 
     this.elements.btnPrevSlide.addEventListener('click', () => this.navigateSlide(-1));
@@ -1165,7 +1388,12 @@ class App {
   updateCodePanel(operation, value = null, index = null, position = null, values = null, capacity = null) {
     if (!this.currentModule) return;
 
-    const templates = CCodeTemplates[this.currentModule];
+    // Store current operation parameters for language switching
+    this.currentOperation = { operation, value, index, position, values, capacity };
+
+    const templates = this.currentLanguage === 'python' 
+      ? PythonCodeTemplates[this.currentModule]
+      : CCodeTemplates[this.currentModule];
     if (!templates || !templates[operation]) return;
 
     let code;
@@ -1226,6 +1454,9 @@ class App {
 
     this.elements.btnPrevSlide.disabled = currentSlideIndex === 0;
     this.elements.btnNextSlide.disabled = currentSlideIndex === slides.length - 1;
+
+    // Reset scroll position to top to prevent content being hidden
+    document.getElementById('slides-container').scrollTop = 0;
   }
 
   navigateSlide(direction) {
