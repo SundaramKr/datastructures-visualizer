@@ -10,7 +10,7 @@ backend/
 
 ## Endpoints (after deploy)
 
-- **POST** `password-signup` — create account (bcrypt password stored in DB)
+- **POST** `password-signup` — create account only (rejects duplicate emails with 409)
 - **POST** `password-login` — verify email/password
 
 URLs:
@@ -104,4 +104,5 @@ The project ref is public (it appears in browser network requests). The service 
 | `Missing PROJECT_URL or SERVICE_ROLE_KEY` | Run `supabase secrets set ...` from `backend/` and redeploy |
 | `Set your Supabase project ref` in UI | Update `backend/auth/config.js` |
 | 403 on signup | Email must end with `@bmsce.ac.in` |
+| 409 on signup | Email already registered — use Sign in |
 | Auth scripts 404 on hosted site | Publish repo **root**, not `backend/` alone |

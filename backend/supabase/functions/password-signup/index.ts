@@ -45,6 +45,19 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    const { data: existing, error: lookupError } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (lookupError) return json(500, { error: lookupError.message });
+    if (existing) {
+      return json(409, {
+        error: "An account with this email already exists. Sign in instead.",
+      });
+    }
+
     const bcryptLib: any = (bcrypt as any).default ?? bcrypt;
     const passwordHash = await bcryptLib.hash(password, 10);
     const row: Record<string, unknown> = {
@@ -53,7 +66,7 @@ Deno.serve(async (req) => {
     };
     if (typeof body.name !== "undefined") row.name = body.name?.trim() || null;
 
-    const { error } = await supabase.from("users").upsert(row, { onConflict: "email" });
+    const { error } = await supabase.from("users").insert(row);
     if (error) return json(500, { error: error.message });
 
     return json(200, { ok: true, email, name: row.name ?? null });
