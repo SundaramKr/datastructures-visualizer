@@ -8,8 +8,65 @@
 </head>
 <body>
   <div class="app">
-    <section id="screen-home" class="screen active">
+    <section id="screen-auth" class="screen">
+      <div class="screen-content auth-content">
+        <h1 class="app-title">Data Structures Visualizer</h1>
+        <p class="app-subtitle">Sign in with your BMSCE email</p>
+
+        <div class="auth-card">
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab active" data-auth-mode="login">Sign in</button>
+            <button type="button" class="auth-tab" data-auth-mode="signup">Sign up</button>
+          </div>
+
+          <form id="auth-form" class="auth-form">
+            <p id="auth-error" class="auth-error" hidden></p>
+
+            <label class="modal-label" for="auth-email">Email</label>
+            <input
+              type="email"
+              id="auth-email"
+              class="modal-input auth-input"
+              placeholder="you@bmsce.ac.in"
+              autocomplete="username"
+              required
+            >
+
+            <div id="auth-name-field" hidden>
+              <label class="modal-label" for="auth-name">Full name</label>
+              <input
+                type="text"
+                id="auth-name"
+                class="modal-input auth-input"
+                placeholder="Your name"
+                autocomplete="name"
+              >
+            </div>
+
+            <label class="modal-label" for="auth-password">Password</label>
+            <input
+              type="password"
+              id="auth-password"
+              class="modal-input auth-input"
+              placeholder="At least 6 characters"
+              autocomplete="current-password"
+              required
+            >
+
+            <button type="submit" class="btn-primary auth-submit" id="auth-submit">Sign in</button>
+          </form>
+
+          <p class="auth-hint">Only <strong>@bmsce.ac.in</strong> addresses can access this app.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-home" class="screen">
       <div class="screen-content">
+        <div class="user-bar" id="user-bar" hidden>
+          <span id="user-greeting"></span>
+          <button type="button" class="btn-secondary btn-logout" id="btn-logout">Sign out</button>
+        </div>
         <h1 class="app-title">Data Structures Visualizer</h1>
         <p class="app-subtitle">Starting with arrays and linked lists</p>
         <button class="card card-home" id="btn-enter" aria-label="Enter Data Structures">
@@ -168,5 +225,9 @@
 
   <!-- Main app -->
   <script src="script.js"></script>
+
+  <!-- Auth (loads after App class) -->
+  <script src="backend/auth/config.js"></script>
+  <script src="backend/auth/auth.js"></script>
 </body>
 </html>

@@ -63,7 +63,25 @@ class App {
     this._bindEvents();
   }
 
+  updateUserBar() {
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const bar = document.getElementById('user-bar');
+    const greeting = document.getElementById('user-greeting');
+    if (!bar || !greeting) return;
+    if (user) {
+      bar.hidden = false;
+      greeting.textContent = user.name ? `Hi, ${user.name}` : user.email;
+    } else {
+      bar.hidden = true;
+    }
+  }
+
   _bindEvents() {
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => Auth.logout());
+    }
+
     document.getElementById('btn-enter').addEventListener('click', () => this.showScreen('modules'));
     document.getElementById('btn-back-modules').addEventListener('click', () => this.showScreen('home'));
     document.getElementById('btn-back-slides').addEventListener('click', () => this.showScreen('modules'));
@@ -462,7 +480,4 @@ const ModuleRegistry = {
   linkedlist: { title: 'Linked Lists', Visualizer: LinkedListVisualizer },
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  window.app = new App();
-  window.ModuleRegistry = ModuleRegistry;
-});
+window.ModuleRegistry = ModuleRegistry;

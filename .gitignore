@@ -1,0 +1,11 @@
+# Supabase local CLI cache (may contain project refs / connection info)
+backend/supabase/.temp/
+
+# Secrets — never commit
+.env
+.env.*
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
