@@ -29,7 +29,13 @@ Deno.serve(async (req) => {
   }
 
   const { data, error } = await supabase
-    .rpc("get_user_presentations", { user_email: userEmail });
+    .from("presentations")
+    .select(`
+      *,
+      slide_configs (*)
+    `)
+    .eq("user_id", userEmail)
+    .order("created_at", { ascending: false });
 
   if (error) return json(500, { error: error.message });
 

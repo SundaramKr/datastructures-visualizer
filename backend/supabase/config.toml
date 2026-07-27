@@ -416,3 +416,6 @@ verify_jwt = false
 
 [functions.delete-presentation]
 verify_jwt = false
+
+[functions.update-presentation]
+verify_jwt = false

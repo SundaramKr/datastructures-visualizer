@@ -300,6 +300,27 @@ class App {
       createForm.addEventListener('submit', (e) => this.handleCreatePresentation(e));
     }
 
+    const editVizType = document.getElementById('edit-viz-type');
+    if (editVizType) {
+      editVizType.addEventListener('change', (e) => {
+        document.getElementById('edit-viz-size-group').style.display = 
+          e.target.value === 'array' ? 'block' : 'none';
+      });
+    }
+
+    const editCancelBtn = document.getElementById('edit-presentation-cancel');
+    if (editCancelBtn) {
+      editCancelBtn.addEventListener('click', () => {
+        document.getElementById('edit-presentation-form').reset();
+        document.getElementById('edit-presentation-modal').close();
+      });
+    }
+
+    const editForm = document.getElementById('edit-presentation-form');
+    if (editForm) {
+      editForm.addEventListener('submit', (e) => this.handleEditPresentation(e));
+    }
+
     // Presentation viewer events
     const toggleViewBtn = document.getElementById('btn-toggle-view');
     if (toggleViewBtn) {
@@ -671,7 +692,8 @@ class App {
       const data = await response.json();
       if (!data.ok) throw new Error(data.error);
 
-      this.renderPresentationsList(data.presentations || []);
+      this.presentationsData = data.presentations || [];
+      this.renderPresentationsList(this.presentationsData);
     } catch (error) {
       console.error('Failed to load presentations:', error);
       this.showToast('Failed to load presentations', 'error');
@@ -702,6 +724,7 @@ class App {
         </div>
         <div class="presentation-card-actions">
           <button class="btn-primary" data-action="open" data-id="${p.id}" data-token="${p.share_token}">Open</button>
+          <button class="btn-secondary" data-action="edit" data-id="${p.id}">Edit</button>
           <button class="btn-secondary" data-action="delete" data-id="${p.id}">Delete</button>
         </div>
       </div>
@@ -710,9 +733,12 @@ class App {
     // Event delegation for presentation actions
     container.addEventListener('click', (e) => {
       const openBtn = e.target.closest('[data-action="open"]');
+      const editBtn = e.target.closest('[data-action="edit"]');
       const deleteBtn = e.target.closest('[data-action="delete"]');
       if (openBtn) {
         this.openPresentation(openBtn.dataset.id, openBtn.dataset.token);
+      } else if (editBtn) {
+        this.openEditModal(editBtn.dataset.id);
       } else if (deleteBtn) {
         this.deletePresentation(deleteBtn.dataset.id);
       }
@@ -783,6 +809,105 @@ class App {
       this.loadPresentations();
     } catch (error) {
       this.showToast('Failed to create presentation: ' + error.message, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  }
+
+  openEditModal(presentationId) {
+    const p = this.presentationsData.find(x => x.id === presentationId);
+    if (!p) return;
+    
+    document.getElementById('edit-presentation-id').value = p.id;
+    document.getElementById('edit-presentation-title-input').value = p.title;
+    document.getElementById('edit-presentation-description').value = p.description || '';
+    document.getElementById('edit-presentation-url').value = p.google_slides_url;
+    document.getElementById('edit-presentation-share-token').value = p.share_token;
+    // Load slide config for slide 0 if it exists
+    let vizType = 'array';
+    let vizValues = '10, 20, 30, 40, 50';
+    let vizCapacity = 10;
+    
+    if (p.slide_configs && p.slide_configs.length > 0) {
+      const slide0 = p.slide_configs.find(s => s.slide_number === 0);
+      if (slide0) {
+        vizType = slide0.visualizer_type || 'array';
+        if (slide0.visualizer_config) {
+          if (slide0.visualizer_config.values) {
+            vizValues = slide0.visualizer_config.values.join(', ');
+          }
+          if (slide0.visualizer_config.capacity) {
+            vizCapacity = slide0.visualizer_config.capacity;
+          }
+        }
+      }
+    }
+    
+    document.getElementById('edit-viz-type').value = vizType;
+    document.getElementById('edit-viz-values').value = vizValues;
+    document.getElementById('edit-viz-size').value = vizCapacity;
+    document.getElementById('edit-viz-size-group').style.display = vizType === 'array' ? 'block' : 'none';
+    document.getElementById('edit-presentation-modal').showModal();
+  }
+
+  async handleEditPresentation(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-presentation-id').value;
+    const title = document.getElementById('edit-presentation-title-input').value.trim();
+    const description = document.getElementById('edit-presentation-description').value.trim();
+    const googleSlidesUrl = document.getElementById('edit-presentation-url').value.trim();
+    const shareToken = document.getElementById('edit-presentation-share-token').value.trim();
+    const vizType = document.getElementById('edit-viz-type').value;
+    const vizValuesRaw = document.getElementById('edit-viz-values').value;
+    
+    let vizValues = this._parseValues(vizValuesRaw);
+    let vizCapacity = null;
+    
+    if (vizType === 'array') {
+      let size = parseInt(document.getElementById('edit-viz-size').value, 10);
+      size = Number.isNaN(size) || size < 1 ? 5 : Math.min(Math.max(size, 1), 20);
+      vizValues = this._buildArrayValues(vizValues, size);
+      vizCapacity = size;
+    }
+
+    if (!title || !googleSlidesUrl || !shareToken) {
+      this.showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    const submitBtn = document.getElementById('edit-presentation-submit');
+    submitBtn.disabled = true;
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Updating…';
+
+    try {
+      const response = await fetch(`${window.AUTH_CONFIG.baseUrl}/update-presentation`, {
+        method: 'POST',
+        headers: this._authHeaders(),
+        body: JSON.stringify({
+          presentation_id: id,
+          title,
+          description,
+          google_slides_url: googleSlidesUrl,
+          share_token: shareToken,
+          visualizer_type: vizType,
+          visualizer_config: {
+            values: vizValues,
+            ...(vizCapacity !== null && { capacity: vizCapacity })
+          }
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.ok) throw new Error(data.error);
+
+      document.getElementById('edit-presentation-modal').close();
+      document.getElementById('edit-presentation-form').reset();
+      this.showToast('Presentation updated successfully!', 'success');
+      this.loadPresentations();
+    } catch (error) {
+      this.showToast('Failed to update presentation: ' + error.message, 'error');
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = originalText;

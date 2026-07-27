@@ -164,7 +164,16 @@ as $$
     'google_slides_url', google_slides_url,
     'share_token', share_token,
     'created_at', created_at,
-    'updated_at', updated_at
+    'updated_at', updated_at,
+    'slide_configs', (
+      select json_agg(json_build_object(
+        'slide_number', slide_number,
+        'visualizer_type', visualizer_type,
+        'visualizer_config', visualizer_config
+      ))
+      from public.slide_configs
+      where slide_configs.presentation_id = ordered_presentations.id
+    )
   ))
   from (
     select *

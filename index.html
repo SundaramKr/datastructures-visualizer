@@ -309,6 +309,49 @@
     </form>
   </dialog>
 
+  <dialog class="modal" id="edit-presentation-modal">
+    <form class="modal-content" id="edit-presentation-form">
+      <h3>Edit Presentation</h3>
+      <p class="modal-desc">Update your presentation details</p>
+      
+      <input type="hidden" id="edit-presentation-id">
+      
+      <label class="modal-label" for="edit-presentation-title-input">Title</label>
+      <input type="text" id="edit-presentation-title-input" class="modal-input" required>
+      
+      <label class="modal-label" for="edit-presentation-description">Description (optional)</label>
+      <input type="text" id="edit-presentation-description" class="modal-input">
+      
+      <label class="modal-label" for="edit-presentation-url">Google Slides URL</label>
+      <input type="url" id="edit-presentation-url" class="modal-input" required>
+
+      <label class="modal-label" for="edit-presentation-share-token">Custom URL Path</label>
+      <div class="input-group">
+        <span class="input-prefix">dst-vis.netlify.app/present/</span>
+        <input type="text" id="edit-presentation-share-token" class="modal-input" required pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, hyphens, and underscores allowed">
+      </div>
+
+      <label class="modal-label" for="edit-viz-type">Data Structure (Slide 1)</label>
+      <select id="edit-viz-type" class="modal-input">
+        <option value="array">Array</option>
+        <option value="linkedlist">Linked List</option>
+      </select>
+
+      <label class="modal-label" for="edit-viz-values">Initial Values (comma-separated)</label>
+      <input type="text" id="edit-viz-values" class="modal-input">
+
+      <div id="edit-viz-size-group">
+        <label class="modal-label" for="edit-viz-size">Array Size (max 20)</label>
+        <input type="number" id="edit-viz-size" class="modal-input" min="1" max="20">
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="edit-presentation-cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="edit-presentation-submit">Update</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="modal" id="share-modal">
     <form method="dialog" class="modal-content" id="share-form">
       <h3>Share Presentation</h3>

@@ -1,0 +1,114 @@
+// deno-lint-ignore-file
+import { corsHeaders } from "../_shared/cors.ts";
+import { isAllowedEmail } from "../_shared/email.ts";
+import { validateSession, getSupabaseClient } from "../_shared/auth.ts";
+
+function json(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json(405, { error: "Use POST" });
+
+  let supabase;
+  try {
+    supabase = getSupabaseClient();
+  } catch (resp) {
+    return resp as Response;
+  }
+
+  // Authenticate via session token
+  let userEmail: string;
+  try {
+    userEmail = await validateSession(req, supabase);
+  } catch (resp) {
+    return resp as Response;
+  }
+
+  if (!isAllowedEmail(userEmail)) {
+    return json(403, { error: "Only @bmsce.ac.in email addresses are allowed" });
+  }
+
+  let body: { 
+    presentation_id?: string;
+    title?: string; 
+    description?: string; 
+    google_slides_url?: string;
+    share_token?: string;
+    visualizer_type?: string;
+    visualizer_config?: any;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return json(400, { error: "Body must be JSON" });
+  }
+
+  const { presentation_id, title, description, google_slides_url, share_token, visualizer_type, visualizer_config } = body;
+  if (!presentation_id || !title || !google_slides_url || !share_token) {
+    return json(400, { error: "Missing required fields: presentation_id, title, google_slides_url, share_token" });
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(share_token)) {
+    return json(400, { error: "Custom URL path can only contain letters, numbers, hyphens, and underscores." });
+  }
+
+  // Validate Google Slides URL format
+  const googleSlidesPattern = /^https:\/\/docs\.google\.com\/presentation\/d\/[a-zA-Z0-9_-]+/;
+  if (!googleSlidesPattern.test(google_slides_url)) {
+    return json(400, { error: "Invalid Google Slides URL format" });
+  }
+
+  // Check ownership
+  const { data: pres, error: presError } = await supabase
+    .from("presentations")
+    .select("user_id")
+    .eq("id", presentation_id)
+    .single();
+
+  if (presError || !pres) return json(404, { error: "Presentation not found" });
+  if (pres.user_id !== userEmail) return json(403, { error: "Not authorized" });
+
+  // Update presentation
+  const { data, error } = await supabase
+    .from("presentations")
+    .update({
+      title,
+      description: description || null,
+      google_slides_url,
+      share_token,
+    })
+    .eq("id", presentation_id)
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      return json(409, { error: "This URL path is already taken. Please choose another one." });
+    }
+    return json(500, { error: error.message });
+  }
+
+  // If provided, automatically upsert the first slide configuration
+  if (visualizer_type) {
+    const { error: slideError } = await supabase
+      .from("slide_configs")
+      .upsert(
+        {
+          presentation_id: presentation_id,
+          slide_number: 0,
+          visualizer_type: visualizer_type,
+          visualizer_config: visualizer_config || null
+        },
+        { onConflict: 'presentation_id,slide_number' }
+      );
+      
+    if (slideError) console.error("Failed to upsert slide config:", slideError);
+  }
+
+  return json(200, { ok: true, presentation: data });
+});
