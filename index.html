@@ -5,6 +5,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Data Structures Visualizer</title>
+  <script>
+    (function () {
+      var path = window.location.pathname;
+      var match = path.match(/^(.*)\/present\//);
+      if (match) {
+        var base = document.createElement('base');
+        base.href = match[1] + '/';
+        document.head.appendChild(base);
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="style.css">
   <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
