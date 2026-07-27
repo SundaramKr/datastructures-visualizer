@@ -457,15 +457,21 @@ class App {
     const slide = slides[currentSlideIndex];
 
     if (!slide) {
-      this.elements.slideContent.innerHTML = '<p class="slide-text">No slides available.</p>';
+      this.elements.slideContent.replaceChildren();
+      const p = document.createElement('p');
+      p.className = 'slide-text';
+      p.textContent = 'No slides available.';
+      this.elements.slideContent.appendChild(p);
       return;
     }
 
-    // Use escapeHtml for the title to prevent XSS
-    this.elements.slideContent.innerHTML = `
+    // Use DOMParser to safely parse HTML content
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`
       <h2 class="slide-title">${this.escapeHtml(slide.title)}</h2>
       ${slide.content}
-    `;
+    `, 'text/html');
+    this.elements.slideContent.replaceChildren(...doc.body.childNodes);
 
     this.elements.slideIndicator.textContent = `${currentSlideIndex + 1} / ${slides.length}`;
 
@@ -497,20 +503,23 @@ class App {
     const { slides, currentModule } = this.slideState;
     const panel = this.elements.chaptersPanelContent;
 
-    let html = '';
+    panel.replaceChildren();
+
     slides.forEach((slide, index) => {
-      html += `<button class="chapter-item sub-chapter ${index === 0 ? 'active' : ''}" data-slide-index="${index}">${this.escapeHtml(slide.title)}</button>`;
+      const btn = document.createElement('button');
+      btn.className = `chapter-item sub-chapter ${index === 0 ? 'active' : ''}`;
+      btn.dataset.slideIndex = index;
+      btn.textContent = slide.title; // Secure text assignment
+      btn.addEventListener('click', () => this.goToSlide(index));
+      panel.appendChild(btn);
     });
 
-    html += `<button class="chapter-item visualizer-link" id="btn-go-to-visualizer">🎯 Go to Visualization</button>`;
-
-    panel.innerHTML = html;
-
-    panel.querySelectorAll('.chapter-item[data-slide-index]').forEach((btn) => {
-      btn.addEventListener('click', () => this.goToSlide(parseInt(btn.dataset.slideIndex, 10)));
-    });
-
-    document.getElementById('btn-go-to-visualizer').addEventListener('click', () => this.goToVisualizer());
+    const visBtn = document.createElement('button');
+    visBtn.className = 'chapter-item visualizer-link';
+    visBtn.id = 'btn-go-to-visualizer';
+    visBtn.textContent = '🎯 Go to Visualization';
+    visBtn.addEventListener('click', () => this.goToVisualizer());
+    panel.appendChild(visBtn);
   }
 
   updateChaptersPanelActive() {
@@ -1041,14 +1050,8 @@ class App {
       await navigator.clipboard.writeText(shareUrlInput.value);
       this.showToast('Link copied to clipboard!', 'success');
     } catch {
-      // Fallback for older browsers
+      this.showToast('Failed to copy link. Please copy manually.', 'error');
       shareUrlInput.select();
-      try {
-        document.execCommand('copy');
-        this.showToast('Link copied to clipboard!', 'success');
-      } catch {
-        this.showToast('Failed to copy link. Please copy manually.', 'error');
-      }
     }
   }
 

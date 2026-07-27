@@ -55,75 +55,18 @@ create table if not exists public.slide_configs (
   unique(presentation_id, slide_number)
 );
 
--- RLS policies for presentations
+-- All operations are handled via Edge Functions using the service_role key,
+-- or via security definer RPC functions. We explicitly deny all direct API access.
+
+-- Presentations RLS
 alter table public.presentations enable row level security;
+drop policy if exists "deny all presentations" on public.presentations;
+create policy "deny all presentations" on public.presentations for all using (false);
 
--- Users can read their own presentations
-create policy "users read own presentations" on public.presentations
-  for select using (auth.uid()::text = user_id);
-
--- Users can insert their own presentations
-create policy "users insert own presentations" on public.presentations
-  for insert with check (auth.uid()::text = user_id);
-
--- Users can update their own presentations
-create policy "users update own presentations" on public.presentations
-  for update using (auth.uid()::text = user_id);
-
--- Users can delete their own presentations
-create policy "users delete own presentations" on public.presentations
-  for delete using (auth.uid()::text = user_id);
-
--- Public can read presentations by share token (via function)
-create policy "anon read by share token" on public.presentations
-  for select using (true);
-
--- RLS policies for slide_configs
+-- Slide Configs RLS
 alter table public.slide_configs enable row level security;
-
--- Users can read slide configs for their presentations
-create policy "users read own slide configs" on public.slide_configs
-  for select using (
-    exists (
-      select 1 from public.presentations 
-      where presentations.id = slide_configs.presentation_id 
-      and presentations.user_id = auth.uid()::text
-    )
-  );
-
--- Users can insert slide configs for their presentations
-create policy "users insert own slide configs" on public.slide_configs
-  for insert with check (
-    exists (
-      select 1 from public.presentations 
-      where presentations.id = slide_configs.presentation_id 
-      and presentations.user_id = auth.uid()::text
-    )
-  );
-
--- Users can update slide configs for their presentations
-create policy "users update own slide configs" on public.slide_configs
-  for update using (
-    exists (
-      select 1 from public.presentations 
-      where presentations.id = slide_configs.presentation_id 
-      and presentations.user_id = auth.uid()::text
-    )
-  );
-
--- Users can delete slide configs for their presentations
-create policy "users delete own slide configs" on public.slide_configs
-  for delete using (
-    exists (
-      select 1 from public.presentations 
-      where presentations.id = slide_configs.presentation_id 
-      and presentations.user_id = auth.uid()::text
-    )
-  );
-
--- Public can read slide configs for shared presentations
-create policy "anon read slide configs" on public.slide_configs
-  for select using (true);
+drop policy if exists "deny all slide_configs" on public.slide_configs;
+create policy "deny all slide_configs" on public.slide_configs for all using (false);
 
 -- Function to get presentation by share token
 create or replace function public.get_presentation_by_token(token text)
