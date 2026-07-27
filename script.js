@@ -1049,12 +1049,10 @@ class App {
       shareBtn.hidden = isReadOnly;
     }
 
-    // Update back button behavior for public viewers
+    // Hide back button for public viewers
     const backBtn = document.getElementById('btn-back-presentation');
-    if (backBtn && isReadOnly) {
-      backBtn.textContent = '← Home';
-    } else if (backBtn) {
-      backBtn.textContent = '← Back';
+    if (backBtn) {
+      backBtn.hidden = isReadOnly;
     }
   }
 }
