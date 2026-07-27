@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
     title?: string; 
     description?: string; 
     google_slides_url?: string;
+    share_token?: string;
     visualizer_type?: string;
     visualizer_config?: any;
   };
@@ -46,9 +47,13 @@ Deno.serve(async (req) => {
     return json(400, { error: "Body must be JSON" });
   }
 
-  const { title, description, google_slides_url, visualizer_type, visualizer_config } = body;
-  if (!title || !google_slides_url) {
-    return json(400, { error: "Missing required fields: title, google_slides_url" });
+  const { title, description, google_slides_url, share_token, visualizer_type, visualizer_config } = body;
+  if (!title || !google_slides_url || !share_token) {
+    return json(400, { error: "Missing required fields: title, google_slides_url, share_token" });
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(share_token)) {
+    return json(400, { error: "Custom URL path can only contain letters, numbers, hyphens, and underscores." });
   }
 
   // Validate Google Slides URL format
@@ -64,11 +69,17 @@ Deno.serve(async (req) => {
       title,
       description: description || null,
       google_slides_url,
+      share_token,
     })
     .select()
     .single();
 
-  if (error) return json(500, { error: error.message });
+  if (error) {
+    if (error.code === '23505') {
+      return json(409, { error: "This URL path is already taken. Please choose another one." });
+    }
+    return json(500, { error: error.message });
+  }
 
   // If provided, automatically create the first slide configuration
   if (visualizer_type) {

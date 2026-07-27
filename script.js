@@ -745,6 +745,7 @@ class App {
     const title = document.getElementById('create-presentation-title-input').value.trim();
     const description = document.getElementById('presentation-description').value.trim();
     const googleSlidesUrl = document.getElementById('presentation-url').value.trim();
+    const shareToken = document.getElementById('presentation-share-token').value.trim();
     const vizType = document.getElementById('create-viz-type').value;
     const vizValuesRaw = document.getElementById('create-viz-values').value;
     
@@ -758,7 +759,7 @@ class App {
       vizCapacity = size;
     }
 
-    if (!title || !googleSlidesUrl) {
+    if (!title || !googleSlidesUrl || !shareToken) {
       this.showToast('Please fill in all required fields', 'error');
       return;
     }
@@ -776,6 +777,7 @@ class App {
           title,
           description,
           google_slides_url: googleSlidesUrl,
+          share_token: shareToken,
           visualizer_type: vizType,
           visualizer_config: {
             values: vizValues,

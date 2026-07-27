@@ -286,6 +286,12 @@
       <input type="url" id="presentation-url" class="modal-input"
         placeholder="https://docs.google.com/presentation/d/..." required>
 
+      <label class="modal-label" for="presentation-share-token">Custom URL Path</label>
+      <div class="input-group">
+        <span class="input-prefix">dst-vis.netlify.app/present/</span>
+        <input type="text" id="presentation-share-token" class="modal-input" placeholder="my-lesson-1" required pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, hyphens, and underscores allowed">
+      </div>
+
       <label class="modal-label" for="create-viz-type">Data Structure</label>
       <select id="create-viz-type" class="modal-input">
         <option value="array">Array</option>
