@@ -837,6 +837,15 @@ class App {
     const statusMessage = document.getElementById('presentation-status-message');
     const infoStrip = document.getElementById('presentation-info-strip');
 
+    // Ensure we start in slides mode
+    const iframeContainer = document.getElementById('slides-iframe-container');
+    const fullVizContainer = document.getElementById('presentation-viz-container');
+    const codePanel = document.getElementById('presentation-code-panel');
+    if (iframeContainer) iframeContainer.hidden = false;
+    if (fullVizContainer) fullVizContainer.hidden = true;
+    if (codePanel) codePanel.hidden = true;
+    this.presentationViewMode = 'slides';
+
     // Try to use slide config if available
     let vizType = 'array';
     let vizValues = [10, 20, 30, 40, 50];
@@ -883,16 +892,19 @@ class App {
   togglePresentationView() {
     const iframeContainer = document.getElementById('slides-iframe-container');
     const vizContainer = document.getElementById('presentation-viz-container');
+    const codePanel = document.getElementById('presentation-code-panel');
 
     if (iframeContainer.hidden) {
       // Switch to slides view
       iframeContainer.hidden = false;
       vizContainer.hidden = true;
+      if (codePanel) codePanel.hidden = true;
       this.presentationViewMode = 'slides';
     } else {
       // Switch to visualizer view
       iframeContainer.hidden = true;
       vizContainer.hidden = false;
+      if (codePanel) codePanel.hidden = false;
       this.presentationViewMode = 'visualizer';
     }
   }

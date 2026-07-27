@@ -44,6 +44,10 @@ html, body {
   overflow: hidden;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   font-family: var(--font);
   font-size: 15px;
@@ -1337,7 +1341,7 @@ button, input {
 .presentation-viewer {
   display: flex;
   gap: 16px;
-  height: calc(100vh - 140px);
+  flex: 1;
 }
 
 .presentation-main {

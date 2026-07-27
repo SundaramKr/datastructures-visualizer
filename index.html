@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
   <link rel="manifest" href="favicon/site.webmanifest">
 </head>
+
 <body>
   <div class="app">
     <section id="screen-auth" class="screen">
@@ -27,35 +29,18 @@
             <p id="auth-error" class="auth-error" hidden></p>
 
             <label class="modal-label" for="auth-email">Email</label>
-            <input
-              type="email"
-              id="auth-email"
-              class="modal-input auth-input"
-              placeholder="you@bmsce.ac.in"
-              autocomplete="username"
-              required
-            >
+            <input type="email" id="auth-email" class="modal-input auth-input" placeholder="you@bmsce.ac.in"
+              autocomplete="username" required>
 
             <div id="auth-name-field" hidden>
               <label class="modal-label" for="auth-name">Full name</label>
-              <input
-                type="text"
-                id="auth-name"
-                class="modal-input auth-input"
-                placeholder="Your name"
-                autocomplete="name"
-              >
+              <input type="text" id="auth-name" class="modal-input auth-input" placeholder="Your name"
+                autocomplete="name">
             </div>
 
             <label class="modal-label" for="auth-password">Password</label>
-            <input
-              type="password"
-              id="auth-password"
-              class="modal-input auth-input"
-              placeholder="At least 6 characters"
-              autocomplete="current-password"
-              required
-            >
+            <input type="password" id="auth-password" class="modal-input auth-input" placeholder="At least 6 characters"
+              autocomplete="current-password" required>
 
             <button type="submit" class="btn-primary auth-submit" id="auth-submit">Sign in</button>
           </form>
@@ -143,7 +128,7 @@
       <div class="screen-content">
         <button class="btn-back" id="btn-back-dashboard" aria-label="Back to home">← Back</button>
         <h2 class="screen-title">Teacher Dashboard</h2>
-        
+
         <div class="dashboard-header">
           <button class="btn-primary" id="btn-create-presentation">+ New Presentation</button>
         </div>
@@ -190,7 +175,7 @@
           </div>
         </div>
 
-        <aside class="code-panel" id="presentation-code-panel">
+        <aside class="code-panel" id="presentation-code-panel" hidden>
           <div class="code-panel-header">
             <h3 class="code-panel-title">Code</h3>
             <div class="code-language-switcher">
@@ -198,7 +183,8 @@
               <button class="lang-btn" data-lang="python">Python</button>
             </div>
           </div>
-          <pre class="code-panel-content" id="presentation-code-content">// Click on an operation to see the C code</pre>
+          <pre class="code-panel-content"
+            id="presentation-code-content">// Click on an operation to see the C code</pre>
         </aside>
       </main>
     </section>
@@ -281,12 +267,14 @@
       <h3>Create New Presentation</h3>
       <p class="modal-desc">Enter a title and your Google Slides link</p>
       <label class="modal-label" for="create-presentation-title-input">Title</label>
-      <input type="text" id="create-presentation-title-input" class="modal-input" placeholder="My Data Structures Lesson" required>
+      <input type="text" id="create-presentation-title-input" class="modal-input"
+        placeholder="My Data Structures Lesson" required>
       <label class="modal-label" for="presentation-description">Description (optional)</label>
       <input type="text" id="presentation-description" class="modal-input" placeholder="Brief description">
       <label class="modal-label" for="presentation-url">Google Slides URL</label>
-      <input type="url" id="presentation-url" class="modal-input" placeholder="https://docs.google.com/presentation/d/..." required>
-      
+      <input type="url" id="presentation-url" class="modal-input"
+        placeholder="https://docs.google.com/presentation/d/..." required>
+
       <label class="modal-label" for="create-viz-type">Data Structure</label>
       <select id="create-viz-type" class="modal-input">
         <option value="array">Array</option>
@@ -295,7 +283,7 @@
 
       <label class="modal-label" for="create-viz-values">Initial Values (comma-separated)</label>
       <input type="text" id="create-viz-values" class="modal-input" value="10, 20, 30, 40, 50">
-      
+
       <div id="create-viz-size-group">
         <label class="modal-label" for="create-viz-size">Array Size (max 20)</label>
         <input type="number" id="create-viz-size" class="modal-input" value="10" min="1" max="20">
@@ -351,4 +339,5 @@
   <script src="backend/auth/config.js"></script>
   <script src="backend/auth/auth.js"></script>
 </body>
+
 </html>
