@@ -1,5 +1,6 @@
 # Supabase local CLI cache (may contain project refs / connection info)
 backend/supabase/.temp/
+audit_report.md
 
 # Secrets — never commit
 .env
