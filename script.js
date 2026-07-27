@@ -31,7 +31,6 @@ class App {
       vizTitle: document.getElementById('viz-title'),
       vizContainer: document.getElementById('viz-container'),
       statusMessage: document.getElementById('status-message'),
-      infoStrip: document.getElementById('info-strip'),
       inputModal: document.getElementById('input-modal'),
       modalTitle: document.getElementById('modal-title'),
       modalDesc: document.getElementById('modal-desc'),
@@ -236,7 +235,10 @@ class App {
     this.elements.btnReset.addEventListener('click', () => {
       if (this.visualizer) {
         this.visualizer.reset([...this.initialValues], this.initialCapacity);
-        this.elements.codePanelContent.textContent = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
+        const defaultText = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
+        if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = defaultText;
+        const presCodePanel = document.getElementById('presentation-code-content');
+        if (presCodePanel) presCodePanel.textContent = defaultText;
       }
     });
 
@@ -244,48 +246,22 @@ class App {
       this.elements.codePanelContent.textContent = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
     });
 
-    // Language switcher — scoped to main visualizer
-    document.querySelectorAll('#screen-visualizer .lang-btn').forEach((btn) => {
+    // Language switcher
+    document.querySelectorAll('.lang-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const lang = btn.dataset.lang;
         this.currentLanguage = lang;
 
-        document.querySelectorAll('#screen-visualizer .lang-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
+        document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
 
         if (this.currentOperation) {
           const { operation, value, index, position, values, capacity } = this.currentOperation;
           this.updateCodePanel(operation, value, index, position, values, capacity);
-        } else if (this.visualizer && this.currentModule) {
-          this.elements.codePanelContent.textContent = `// Click on an operation to see the ${lang === 'python' ? 'Python' : 'C'} code`;
-        }
-      });
-    });
-
-    // Language switcher — scoped to presentation viewer
-    document.querySelectorAll('#screen-presentation-viewer .lang-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const lang = btn.dataset.lang;
-        this.currentLanguage = lang;
-
-        document.querySelectorAll('#screen-presentation-viewer .lang-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const codeContent = document.getElementById('presentation-code-content');
-        if (this.currentOperation && this.currentModule) {
-          const templates = lang === 'python'
-            ? PythonCodeTemplates[this.currentModule]
-            : CCodeTemplates[this.currentModule];
-          if (templates && templates[this.currentOperation.operation]) {
-            const { operation, value, index, position, values, capacity } = this.currentOperation;
-            let code;
-            if (operation === 'create') code = templates.create(values, capacity);
-            else if (operation === 'traverse') code = templates.traverse();
-            else if (operation === 'search') code = templates.search(value);
-            if (code) codeContent.textContent = code;
-          }
         } else {
-          codeContent.textContent = `// Click on an operation to see the ${lang === 'python' ? 'Python' : 'C'} code`;
+          const defaultText = `// Click on an operation to see the ${lang === 'python' ? 'Python' : 'C'} code`;
+          if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = defaultText;
+          const presCodePanel = document.getElementById('presentation-code-content');
+          if (presCodePanel) presCodePanel.textContent = defaultText;
         }
       });
     });
@@ -352,6 +328,7 @@ class App {
     if (presTraverse) {
       presTraverse.addEventListener('click', () => {
         if (this.presentationVisualizer) {
+          this.updateCodePanel('traverse');
           this.presentationVisualizer.guard(() => this.presentationVisualizer.traverse());
         }
       });
@@ -366,6 +343,7 @@ class App {
           'Find value in the data structure',
           this.presentationVisualizer.searchDefault,
           (val) => {
+            this.updateCodePanel('search', val);
             this.presentationVisualizer.guard(() => this.presentationVisualizer.search(val));
           }
         );
@@ -380,6 +358,10 @@ class App {
             [...(this.presentationInitialValues || [10, 20, 30, 40, 50])],
             this.presentationInitialCapacity
           );
+          const defaultText = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
+          if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = defaultText;
+          const presCodePanel = document.getElementById('presentation-code-content');
+          if (presCodePanel) presCodePanel.textContent = defaultText;
         }
       });
     }
@@ -425,7 +407,9 @@ class App {
     }
 
     if (code) {
-      this.elements.codePanelContent.textContent = code;
+      if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = code;
+      const presCodePanel = document.getElementById('presentation-code-content');
+      if (presCodePanel) presCodePanel.textContent = code;
     }
   }
 
@@ -540,17 +524,17 @@ class App {
   launchVisualizer(values, capacity) {
     this.showScreen('visualizer');
 
-    const { vizContainer, statusMessage, infoStrip } = this.elements;
+    const { vizContainer, statusMessage } = this.elements;
 
     if (this.currentModule === 'array') {
       this.elements.vizTitle.textContent = 'Array Visualizer';
-      this.visualizer = new ArrayVisualizer(vizContainer, this.anim, statusMessage, infoStrip);
+      this.visualizer = new ArrayVisualizer(vizContainer, this.anim, statusMessage);
       this.visualizer.onCellClick = (index) => this.showContextMenu(index, 'array');
       this.visualizer.init(values, capacity);
       this.updateCodePanel('create', null, null, null, values, capacity);
     } else {
       this.elements.vizTitle.textContent = 'Linked List Visualizer';
-      this.visualizer = new LinkedListVisualizer(vizContainer, this.anim, statusMessage, infoStrip);
+      this.visualizer = new LinkedListVisualizer(vizContainer, this.anim, statusMessage);
       this.visualizer.onNodeClick = (index) => this.showContextMenu(index, 'linkedlist');
       this.visualizer.init(values);
       this.updateCodePanel('create', null, null, null, values, null);
@@ -569,11 +553,7 @@ class App {
   }
 
   _buildArrayValues(values, size) {
-    const result = values.slice(0, size);
-    for (let i = result.length; i < size; i += 1) {
-      result.push(i + 1);
-    }
-    return result;
+    return values.slice(0, size);
   }
 
   showContextMenu(index, type) {
@@ -584,7 +564,12 @@ class App {
     const cellSelector = type === 'array'
       ? `.array-cell[data-index="${index}"]`
       : `.ll-node[data-index="${index}"]`;
-    const target = this.elements.vizContainer.querySelector(cellSelector);
+      
+    const container = this.screens.presentationViewer.classList.contains('active')
+      ? document.getElementById('presentation-viz-canvas')
+      : this.elements.vizContainer;
+      
+    const target = container.querySelector(cellSelector);
 
     if (target) {
       const tr = target.getBoundingClientRect();
@@ -606,39 +591,42 @@ class App {
   }
 
   _handleContextAction(action, target) {
-    if (!this.visualizer) return;
+    const viz = this.screens.presentationViewer.classList.contains('active') 
+      ? this.presentationVisualizer 
+      : this.visualizer;
+    if (!viz) return;
     const { index } = target;
 
     switch (action) {
       case 'insert-before':
         this._promptOperation('Insert Before', 'Value to insert?', '99', (val) => {
           this.updateCodePanel('insert', val, index, 'before');
-          this.visualizer.guard(() => this.visualizer.insertAt(index, val, 'before'));
+          viz.guard(() => viz.insertAt(index, val, 'before'));
         });
         break;
       case 'insert-after':
         this._promptOperation('Insert After', 'Value to insert?', '99', (val) => {
           this.updateCodePanel('insert', val, index, 'after');
-          this.visualizer.guard(() => this.visualizer.insertAt(index, val, 'after'));
+          viz.guard(() => viz.insertAt(index, val, 'after'));
         });
         break;
       case 'delete':
         this.updateCodePanel('delete', null, index);
-        this.visualizer.guard(() => this.visualizer.deleteAt(index));
+        viz.guard(() => viz.deleteAt(index));
         break;
       case 'update': {
         const current = this.currentModule === 'array'
-          ? this.visualizer.data[index]
-          : this.visualizer.nodes[index].value;
+          ? viz.data[index]
+          : viz.nodes[index].value;
         this._promptOperation('Update Value', 'New value?', String(current), (val) => {
           this.updateCodePanel('update', val, index);
-          this.visualizer.guard(() => this.visualizer.updateAt(index, val));
+          viz.guard(() => viz.updateAt(index, val));
         });
         break;
       }
       case 'highlight':
         this.updateCodePanel('highlight', null, index);
-        this.visualizer.highlightAt(index);
+        viz.highlightAt(index);
         break;
     }
   }
@@ -837,7 +825,6 @@ class App {
   initPresentationVisualizer(slideConfigs = null) {
     const vizContainer = document.getElementById('presentation-viz-canvas');
     const statusMessage = document.getElementById('presentation-status-message');
-    const infoStrip = document.getElementById('presentation-info-strip');
 
     // Ensure we start in slides mode
     const iframeContainer = document.getElementById('slides-iframe-container');
@@ -870,14 +857,18 @@ class App {
 
     if (vizType === 'linkedlist') {
       this.presentationVisualizer = new LinkedListVisualizer(
-        vizContainer, this.presentationAnim, statusMessage, infoStrip
+        vizContainer, this.presentationAnim, statusMessage
       );
+      this.presentationVisualizer.onNodeClick = (index) => this.showContextMenu(index, 'linkedlist');
       this.presentationVisualizer.init(vizValues);
+      this.updateCodePanel('create', null, null, null, vizValues, null);
     } else {
       this.presentationVisualizer = new ArrayVisualizer(
-        vizContainer, this.presentationAnim, statusMessage, infoStrip
+        vizContainer, this.presentationAnim, statusMessage
       );
+      this.presentationVisualizer.onCellClick = (index) => this.showContextMenu(index, 'array');
       this.presentationVisualizer.init(vizValues, vizCapacity);
+      this.updateCodePanel('create', null, null, null, vizValues, vizCapacity);
     }
   }
 

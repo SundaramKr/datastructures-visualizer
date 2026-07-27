@@ -9,8 +9,8 @@ class LinkedListVisualizer extends BaseVisualizer {
     return `0x${hex}`;
   }
 
-  constructor(container, anim, statusEl, infoStrip) {
-    super(container, anim, statusEl, infoStrip);
+  constructor(container, anim, statusEl) {
+    super(container, anim, statusEl);
     this.head = null;
     this.nodes = [];
     this.searchDefault = '40';
@@ -54,7 +54,6 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   render() {
-    this.clearInfo();
     const headTarget = this.head ? this.head.address : 'null';
 
     let html = `
@@ -112,7 +111,6 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   async insertAt(index, value, position) {
-    this.clearInfo();
     const insertIdx = position === 'before' ? index : index + 1;
     const newNode = new LinkedListNode(value, this._uniqueAddress(), LinkedListVisualizer.nextId++);
 
@@ -149,7 +147,6 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   async deleteAt(index) {
-    this.clearInfo();
     if (index < 0 || index >= this.nodes.length) return;
 
     const removed = this.nodes[index];
@@ -179,7 +176,6 @@ class LinkedListVisualizer extends BaseVisualizer {
   }
 
   async updateAt(index, value) {
-    this.clearInfo();
     const oldVal = this.nodes[index].value;
     this.setStatus(`Updating node at ${this.nodes[index].address} from ${oldVal} to ${value}…`);
     this.highlightNode(index, 'visiting');
@@ -193,20 +189,13 @@ class LinkedListVisualizer extends BaseVisualizer {
 
   highlightAt(index) {
     this.clearHighlights('highlighted', 'visiting', 'comparing', 'found');
-    this.clearInfo();
     this.highlightNode(index, 'highlighted');
     const node = this.nodes[index];
-    this.setInfo([
-      { label: 'Data', value: node.value, highlight: true },
-      { label: 'Address', value: node.address, highlight: true },
-      { label: 'Points to', value: this._nextPointerLabel(node), highlight: false },
-    ]);
     this.setStatus(`Node ${index} — Data: ${node.value}, Address: ${node.address}`);
   }
 
   async traverse() {
     this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
-    this.clearInfo();
 
     for (let i = 0; i < this.nodes.length; i++) {
       if (this.anim._abort) break;
@@ -222,7 +211,6 @@ class LinkedListVisualizer extends BaseVisualizer {
 
   async search(target) {
     this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
-    this.clearInfo();
 
     for (let i = 0; i < this.nodes.length; i++) {
       if (this.anim._abort) break;
@@ -235,10 +223,6 @@ class LinkedListVisualizer extends BaseVisualizer {
         this.clearHighlights('comparing');
         this.highlightNode(i, 'found');
         this.setStatus(`Found at node ${i} (${this.nodes[i].address}).`);
-        this.setInfo([
-          { label: 'Found at Node', value: i, highlight: true },
-          { label: 'Value', value: target, highlight: true },
-        ]);
         return;
       }
     }
@@ -250,6 +234,5 @@ class LinkedListVisualizer extends BaseVisualizer {
   reset(values) {
     this.anim.abort();
     this.init(values);
-    this.clearInfo();
   }
 }

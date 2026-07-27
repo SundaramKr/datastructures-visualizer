@@ -1,6 +1,6 @@
 class ArrayVisualizer extends BaseVisualizer {
-  constructor(container, anim, statusEl, infoStrip) {
-    super(container, anim, statusEl, infoStrip);
+  constructor(container, anim, statusEl) {
+    super(container, anim, statusEl);
     this.capacity = 10;
     this.data = [];
     this.searchDefault = '30';
@@ -15,7 +15,6 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   render() {
-    this.clearInfo();
     let html = `
       <div class="array-viz">
         <div class="array-meta">
@@ -141,19 +140,13 @@ class ArrayVisualizer extends BaseVisualizer {
 
   highlightAt(index) {
     this.clearHighlights('highlighted', 'visiting', 'comparing', 'found');
-    this.clearInfo();
     this.highlightCell(index, 'highlighted');
-    this.setActiveIndex(index);
-    this.setInfo([
-      { label: 'Index', value: index, highlight: true },
-      { label: 'Value', value: this.data[index], highlight: true },
-    ]);
+    const startSpan = this.highlightCell(index, 'active-index');
     this.setStatus(`Index: ${index}, Value: ${this.data[index]}`);
   }
 
   async traverse() {
     this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
-    this.clearInfo();
 
     for (let i = 0; i < this.data.length; i++) {
       if (this.anim._abort) break;
@@ -170,7 +163,6 @@ class ArrayVisualizer extends BaseVisualizer {
 
   async search(target) {
     this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
-    this.clearInfo();
 
     for (let i = 0; i < this.data.length; i++) {
       if (this.anim._abort) break;
@@ -184,10 +176,6 @@ class ArrayVisualizer extends BaseVisualizer {
         this.clearHighlights('comparing');
         this.highlightCell(i, 'found');
         this.setStatus(`Found at index ${i}.`);
-        this.setInfo([
-          { label: 'Found at Index', value: i, highlight: true },
-          { label: 'Value', value: target, highlight: true },
-        ]);
         return;
       }
     }
@@ -199,6 +187,5 @@ class ArrayVisualizer extends BaseVisualizer {
   reset(values, capacity) {
     this.anim.abort();
     this.init(values, capacity);
-    this.clearInfo();
   }
 }
