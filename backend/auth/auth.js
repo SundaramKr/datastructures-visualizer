@@ -20,7 +20,8 @@ function isAllowedEmail(email) {
 
 class Auth {
   static isLoggedIn() {
-    return Boolean(localStorage.getItem(STORAGE_KEY));
+    const user = Auth.getUser();
+    return Boolean(user && user.session_token);
   }
 
   static getUser() {
@@ -31,6 +32,11 @@ class Auth {
     } catch {
       return null;
     }
+  }
+
+  static getSessionToken() {
+    const user = Auth.getUser();
+    return user ? user.session_token : null;
   }
 
   static setUser(user) {
@@ -164,10 +170,14 @@ class AuthUI {
       Auth.setUser({
         email: data.email,
         name: data.name || name.trim() || null,
+        session_token: data.session_token,
       });
 
       this.screen.classList.remove('active');
-      window.app = new App();
+      // Only create App if not already created
+      if (!window.app) {
+        window.app = new App();
+      }
       window.app.showScreen('home');
       window.app.updateUserBar();
     } catch (err) {
@@ -180,8 +190,23 @@ class AuthUI {
 }
 
 function bootstrapApp() {
+  // Check for public presentation URL
+  const path = window.location.pathname;
+  const publicPresentMatch = path.match(/^\/present\/([a-zA-Z0-9_-]+)$/);
+
+  if (publicPresentMatch) {
+    // Load public presentation without auth
+    if (!window.app) {
+      window.app = new App();
+    }
+    window.app.loadPublicPresentation(publicPresentMatch[1]);
+    return;
+  }
+
   if (Auth.isLoggedIn()) {
-    window.app = new App();
+    if (!window.app) {
+      window.app = new App();
+    }
     window.app.showScreen('home');
     window.app.updateUserBar();
   } else {

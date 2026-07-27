@@ -196,9 +196,9 @@ class ArrayVisualizer extends BaseVisualizer {
     this.setStatus(`${target} not found in the array.`);
   }
 
-  reset(values) {
+  reset(values, capacity) {
     this.anim.abort();
-    this.init(values);
+    this.init(values, capacity);
     this.clearInfo();
   }
 }

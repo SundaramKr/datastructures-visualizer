@@ -1,0 +1,17 @@
+# Netlify configuration for client-side routing
+# Static assets are served first; only unknown paths rewrite to index.html
+
+# Serve static files normally (Netlify does this by default)
+# Only rewrite paths that don't match actual files to index.html
+# This handles /present/[share_token] routes
+
+[[redirects]]
+  from = "/present/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false

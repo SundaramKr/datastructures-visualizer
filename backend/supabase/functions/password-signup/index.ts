@@ -69,7 +69,21 @@ Deno.serve(async (req) => {
     const { error } = await supabase.from("users").insert(row);
     if (error) return json(500, { error: error.message });
 
-    return json(200, { ok: true, email, name: row.name ?? null });
+    // Generate session token
+    const sessionToken = crypto.randomUUID();
+    const { error: tokenError } = await supabase.rpc("create_session", {
+      p_user_email: email,
+      p_token: sessionToken,
+    });
+
+    if (tokenError) return json(500, { error: "Failed to create session" });
+
+    return json(200, {
+      ok: true,
+      email,
+      name: row.name ?? null,
+      session_token: sessionToken,
+    });
   } catch (err) {
     return json(500, {
       error: "Unhandled exception",

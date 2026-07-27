@@ -73,11 +73,18 @@
         </div>
         <h1 class="app-title">Data Structures Visualizer</h1>
         <p class="app-subtitle">Starting with arrays and linked lists</p>
-        <button class="card card-home" id="btn-enter" aria-label="Enter Data Structures">
-          <span class="card-icon">📦</span>
-          <span class="card-label">Data Structures</span>
-          <span class="card-hint">Click to begin</span>
-        </button>
+        <div class="home-grid">
+          <button class="card card-home" id="btn-enter" aria-label="Enter Data Structures">
+            <span class="card-icon">📦</span>
+            <span class="card-label">Data Structures</span>
+            <span class="card-hint">Click to begin</span>
+          </button>
+          <button class="card card-home" id="btn-dashboard" aria-label="Teacher Dashboard">
+            <span class="card-icon">👨‍🏫</span>
+            <span class="card-label">Teacher Dashboard</span>
+            <span class="card-hint">Manage presentations</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -128,6 +135,70 @@
           <div class="chapters-panel-content" id="chapters-panel-content">
             <!-- Chapter navigation will be dynamically loaded here -->
           </div>
+        </aside>
+      </main>
+    </section>
+
+    <section id="screen-dashboard" class="screen">
+      <div class="screen-content">
+        <button class="btn-back" id="btn-back-dashboard" aria-label="Back to home">← Back</button>
+        <h2 class="screen-title">Teacher Dashboard</h2>
+        
+        <div class="dashboard-header">
+          <button class="btn-primary" id="btn-create-presentation">+ New Presentation</button>
+        </div>
+
+        <div class="presentations-list" id="presentations-list">
+          <!-- Presentations will be loaded here -->
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-presentation-viewer" class="screen">
+      <header class="viz-header">
+        <button class="btn-back" id="btn-back-presentation" aria-label="Back to dashboard">← Back</button>
+        <h2 class="viz-title" id="presentation-viewer-title">Presentation</h2>
+        <div class="presentation-controls">
+          <button class="btn-secondary" id="btn-toggle-view">Toggle View</button>
+          <button class="btn-secondary" id="btn-share">Share</button>
+        </div>
+      </header>
+
+      <main class="presentation-viewer">
+        <div class="presentation-main">
+          <div class="slides-iframe-container" id="slides-iframe-container">
+            <iframe id="google-slides-iframe" class="google-slides-iframe" frameborder="0"></iframe>
+          </div>
+
+          <div class="visualizer-container" id="presentation-viz-container" hidden>
+            <div class="status-bar" id="presentation-status-bar">
+              <span class="status-message" id="presentation-status-message">Ready to visualize.</span>
+            </div>
+            <div class="viz-container" id="presentation-viz-canvas"></div>
+            <div class="info-strip" id="presentation-info-strip"></div>
+            <div class="controls-bar">
+              <button class="btn-action" id="presentation-btn-traverse">▶ Traverse</button>
+              <button class="btn-action" id="presentation-btn-search">🔍 Search</button>
+              <button class="btn-action" id="presentation-btn-reset">↺ Reset</button>
+              <button class="btn-action" id="presentation-btn-save-config">💾 Save Config</button>
+              <div class="speed-group">
+                <button class="btn-speed" data-speed="slow">Slow</button>
+                <button class="btn-speed active" data-speed="normal">Normal</button>
+                <button class="btn-speed" data-speed="fast">Fast</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="code-panel" id="presentation-code-panel">
+          <div class="code-panel-header">
+            <h3 class="code-panel-title">Code</h3>
+            <div class="code-language-switcher">
+              <button class="lang-btn active" data-lang="c">C</button>
+              <button class="lang-btn" data-lang="python">Python</button>
+            </div>
+          </div>
+          <pre class="code-panel-content" id="presentation-code-content">// Click on an operation to see the C code</pre>
         </aside>
       </main>
     </section>
@@ -205,6 +276,50 @@
     </form>
   </dialog>
 
+  <dialog class="modal" id="create-presentation-modal">
+    <form class="modal-content" id="create-presentation-form">
+      <h3>Create New Presentation</h3>
+      <p class="modal-desc">Enter a title and your Google Slides link</p>
+      <label class="modal-label" for="create-presentation-title-input">Title</label>
+      <input type="text" id="create-presentation-title-input" class="modal-input" placeholder="My Data Structures Lesson" required>
+      <label class="modal-label" for="presentation-description">Description (optional)</label>
+      <input type="text" id="presentation-description" class="modal-input" placeholder="Brief description">
+      <label class="modal-label" for="presentation-url">Google Slides URL</label>
+      <input type="url" id="presentation-url" class="modal-input" placeholder="https://docs.google.com/presentation/d/..." required>
+      
+      <label class="modal-label" for="create-viz-type">Data Structure</label>
+      <select id="create-viz-type" class="modal-input">
+        <option value="array">Array</option>
+        <option value="linkedlist">Linked List</option>
+      </select>
+
+      <label class="modal-label" for="create-viz-values">Initial Values (comma-separated)</label>
+      <input type="text" id="create-viz-values" class="modal-input" value="10, 20, 30, 40, 50">
+      
+      <div id="create-viz-size-group">
+        <label class="modal-label" for="create-viz-size">Array Size (max 20)</label>
+        <input type="number" id="create-viz-size" class="modal-input" value="10" min="1" max="20">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="create-presentation-cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="create-presentation-submit">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="share-modal">
+    <form method="dialog" class="modal-content" id="share-form">
+      <h3>Share Presentation</h3>
+      <p class="modal-desc">Use this link to share your presentation</p>
+      <label class="modal-label" for="share-url">Shareable Link</label>
+      <input type="text" id="share-url" class="modal-input" readonly>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="share-cancel">Close</button>
+        <button type="button" class="btn-primary" id="share-copy">Copy Link</button>
+      </div>
+    </form>
+  </dialog>
+
   <div class="context-menu" id="context-menu" role="menu" hidden>
     <button class="context-item" data-action="insert-before">Insert Before</button>
     <button class="context-item" data-action="insert-after">Insert After</button>
@@ -214,6 +329,8 @@
   </div>
 
   <div class="overlay" id="overlay" hidden></div>
+
+  <div class="toast-container" id="toast-container"></div>
 
   <!-- Data files -->
   <script src="data/slides.js"></script>

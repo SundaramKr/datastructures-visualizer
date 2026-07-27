@@ -401,3 +401,18 @@ verify_jwt = false
 
 [functions.password-login]
 verify_jwt = false
+
+[functions.create-presentation]
+verify_jwt = false
+
+[functions.get-presentations]
+verify_jwt = false
+
+[functions.get-public-presentation]
+verify_jwt = false
+
+[functions.save-slide-config]
+verify_jwt = false
+
+[functions.delete-presentation]
+verify_jwt = false

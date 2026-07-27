@@ -67,8 +67,8 @@ button, input {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  overflow-y: auto;
   opacity: 0;
   visibility: hidden;
   transform: translateY(12px);
@@ -86,6 +86,7 @@ button, input {
   width: 100%;
   max-width: 800px;
   text-align: center;
+  margin: auto;
 }
 
 .app-title {
@@ -132,10 +133,18 @@ button, input {
   outline: none;
 }
 
+.home-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 .card-home {
   width: min(320px, 85vw);
   min-height: 200px;
-  margin: 0 auto;
+  margin: 0;
   padding: 32px 24px;
 }
 
@@ -1247,10 +1256,210 @@ button, input {
   gap: 12px;
   margin-bottom: 16px;
   font-size: 0.9rem;
-  color: var(--gray-700);
+}
+
+/* ===== Dashboard Styles ===== */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.presentations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.presentation-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: box-shadow var(--transition);
+}
+
+.presentation-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.presentation-card-info {
+  flex: 1;
+  text-align: left;
+}
+
+.presentation-card-title {
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+
+.presentation-card-desc {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+}
+
+.presentation-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.presentation-card-date {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-top: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--gray-500);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+/* ===== Presentation Viewer Styles ===== */
+.presentation-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.presentation-viewer {
+  display: flex;
+  gap: 16px;
+  height: calc(100vh - 140px);
+}
+
+.presentation-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slides-iframe-container {
+  flex: 1;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.google-slides-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.visualizer-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#presentation-viz-canvas {
+  flex: 1;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  min-height: 300px;
 }
 
 .btn-logout {
   padding: 6px 12px;
   font-size: 0.85rem;
+  color: var(--gray-700);
+}
+
+/* ===== Toast Notifications ===== */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--gray-900);
+  color: var(--white);
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+  animation: toast-in 0.3s ease, toast-out 0.3s ease 2.7s forwards;
+  max-width: 360px;
+}
+
+.toast.toast-success {
+  background: var(--green-500);
+}
+
+.toast.toast-error {
+  background: #dc2626;
+}
+
+.toast.toast-info {
+  background: var(--blue-600);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(-12px); }
+}
+
+/* ===== Loading States ===== */
+.loading-placeholder {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--gray-500);
+  font-size: 0.95rem;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ===== Presentation Viewer Responsive ===== */
+#screen-presentation-viewer {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.presentation-viewer {
+  padding: 16px 20px 20px;
+}
+
+@media (max-width: 600px) {
+  .presentation-viewer {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .presentation-controls {
+    flex-wrap: wrap;
+  }
 }
