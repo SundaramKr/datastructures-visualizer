@@ -739,8 +739,8 @@ class App {
       </div>
     `).join('');
 
-    // Event delegation for presentation actions
-    container.addEventListener('click', (e) => {
+    // Event delegation for presentation actions (using onclick to prevent duplicates)
+    container.onclick = (e) => {
       const openBtn = e.target.closest('[data-action="open"]');
       const editBtn = e.target.closest('[data-action="edit"]');
       const deleteBtn = e.target.closest('[data-action="delete"]');
@@ -751,7 +751,7 @@ class App {
       } else if (deleteBtn) {
         this.deletePresentation(deleteBtn.dataset.id);
       }
-    }, { once: false });
+    };
   }
 
   showCreatePresentationModal() {
