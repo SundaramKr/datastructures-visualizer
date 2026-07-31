@@ -76,7 +76,6 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   async insertAt(index, value, position) {
-    this.clearInfo();
     if (this.data.length >= this.capacity) {
       this.setStatus('Array is full. Cannot insert more elements.');
       return;
@@ -105,7 +104,6 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   async deleteAt(index) {
-    this.clearInfo();
     if (index < 0 || index >= this.data.length) return;
 
     this.setStatus(`Deleting element at index ${index}…`);
@@ -126,7 +124,6 @@ class ArrayVisualizer extends BaseVisualizer {
   }
 
   async updateAt(index, value) {
-    this.clearInfo();
     const oldVal = this.data[index];
     this.setStatus(`Updating index ${index} from ${oldVal} to ${value}…`);
     this.highlightCell(index, 'visiting');
