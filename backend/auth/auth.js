@@ -43,7 +43,20 @@ class Auth {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
   }
 
-  static logout() {
+  static async logout() {
+    const token = Auth.getSessionToken();
+    if (token) {
+      try {
+        await fetch(window.AUTH_CONFIG.logoutUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (e) {
+        console.error('Logout API error:', e);
+      }
+    }
     localStorage.removeItem(STORAGE_KEY);
     window.location.reload();
   }

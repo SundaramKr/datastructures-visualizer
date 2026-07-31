@@ -16,4 +16,8 @@ window.AUTH_CONFIG = {
   get signupUrl() {
     return `${this.baseUrl}/password-signup`;
   },
+
+  get logoutUrl() {
+    return `${this.baseUrl}/logout`;
+  },
 };

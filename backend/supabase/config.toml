@@ -419,3 +419,6 @@ verify_jwt = false
 
 [functions.update-presentation]
 verify_jwt = false
+
+[functions.logout]
+verify_jwt = false
