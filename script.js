@@ -9,16 +9,10 @@ class App {
     if (window._appBound) return;
     window._appBound = true;
 
-    this.anim = new AnimationController();
-    this.presentationAnim = new AnimationController(); // Separate controller for presentation
     this.currentModule = null;
-    this.visualizer = null;
     this.contextTarget = null;
     this._operationCallback = null;
     this.currentLanguage = 'c';
-    this.currentOperation = null;
-    this.codeTraceEngine = null; // Initialized in launchVisualizer
-    this._steppingMode = false;  // Manual stepping mode
 
     this.screens = {
       home: document.getElementById('screen-home'),
@@ -77,11 +71,73 @@ class App {
     this.initialCapacity = 5;
     this.currentPresentation = null;
     this.currentPresentationData = null;
-    this.presentationVisualizer = null;
     this.presentationViewMode = 'slides'; // 'slides' or 'visualizer'
     this.isReadOnly = false;
     this.isPublicView = false;
+    this._initVisualizerControllers();
     this._bindEvents();
+  }
+
+  _initVisualizerControllers() {
+    const sharedConfig = {
+      getLanguage: () => this.currentLanguage,
+      promptOperation: (title, desc, defaultVal, cb) => this._promptOperation(title, desc, defaultVal, cb),
+      onNodeClick: (index, type) => this.showContextMenu(index, type),
+    };
+
+    this.dsController = new VisualizerController({
+      ...sharedConfig,
+      container: this.elements.vizContainer,
+      statusEl: this.elements.statusMessage,
+      codePanelEl: this.elements.codePanelContent,
+      screenRoot: this.screens.visualizer,
+      buttons: {
+        traverse: this.elements.btnTraverse,
+        search: this.elements.btnSearch,
+        reverse: this.elements.btnReverse,
+        reset: this.elements.btnReset,
+        toggleMode: this.elements.btnToggleMode,
+        stepForward: this.elements.btnStepForward,
+        abort: this.elements.btnAbort,
+      },
+    });
+
+    this.presController = new VisualizerController({
+      ...sharedConfig,
+      container: document.getElementById('presentation-viz-canvas'),
+      statusEl: document.getElementById('presentation-status-message'),
+      codePanelEl: document.getElementById('presentation-code-content'),
+      screenRoot: this.screens.presentationViewer,
+      buttons: {
+        traverse: document.getElementById('presentation-btn-traverse'),
+        search: document.getElementById('presentation-btn-search'),
+        reverse: document.getElementById('presentation-btn-reverse'),
+        reset: document.getElementById('presentation-btn-reset'),
+        toggleMode: document.getElementById('presentation-btn-toggle-mode'),
+        stepForward: document.getElementById('presentation-btn-step-forward'),
+        abort: document.getElementById('presentation-btn-abort'),
+      },
+    });
+  }
+
+  _getActiveController() {
+    if (this.screens.presentationViewer.classList.contains('active')) {
+      return this.presController;
+    }
+    if (this.screens.visualizer.classList.contains('active')) {
+      return this.dsController;
+    }
+    return null;
+  }
+
+  /** @deprecated Use dsController.visualizer — kept for compatibility */
+  get visualizer() {
+    return this.dsController?.visualizer ?? null;
+  }
+
+  /** @deprecated Use presController.visualizer — kept for compatibility */
+  get presentationVisualizer() {
+    return this.presController?.visualizer ?? null;
   }
 
   // ===== Toast Notification System =====
@@ -139,7 +195,7 @@ class App {
     document.getElementById('btn-back-modules').addEventListener('click', () => this.showScreen('home'));
     document.getElementById('btn-back-slides').addEventListener('click', () => this.showScreen('modules'));
     document.getElementById('btn-back-viz').addEventListener('click', () => {
-      this.anim.abort();
+      this.dsController.anim.abort();
       this.hideContextMenu();
       this.showScreen('slides');
     });
@@ -201,129 +257,22 @@ class App {
       });
     });
 
-    // Speed buttons — scoped to visualizer screen only
-    document.querySelectorAll('#screen-visualizer .btn-speed').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#screen-visualizer .btn-speed').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.anim.setSpeed(btn.dataset.speed);
-      });
-    });
-
-    // Speed buttons — scoped to presentation viewer
-    document.querySelectorAll('#screen-presentation-viewer .btn-speed').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#screen-presentation-viewer .btn-speed').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.presentationAnim.setSpeed(btn.dataset.speed);
-      });
-    });
-
-    this.elements.btnTraverse.addEventListener('click', () => {
-      if (!this.visualizer) return;
-      if (this._isLinkedListMode()) {
-        this.visualizer.guard(() => this.visualizer.traverseTraced(this.codeTraceEngine, this.currentLanguage));
-      } else {
-        this.updateCodePanel('traverse');
-        this.visualizer.guard(() => this.visualizer.traverse());
-      }
-    });
-
-    this.elements.btnSearch.addEventListener('click', () => {
-      if (!this.visualizer) return;
-      this._promptOperation(
-        'Search',
-        `Find value in ${this.currentModule === 'array' ? 'array' : 'linked list'}`,
-        this.visualizer.searchDefault,
-        (val) => {
-          if (this._isLinkedListMode()) {
-            this.visualizer.guard(() => this.visualizer.searchTraced(val, this.codeTraceEngine, this.currentLanguage));
-          } else {
-            this.updateCodePanel('search', val);
-            this.visualizer.guard(() => this.visualizer.search(val));
-          }
-        }
-      );
-    });
-
-    // Reverse button (linked list only)
-    this.elements.btnReverse.addEventListener('click', () => {
-      if (!this.visualizer || !this._isLinkedListMode()) return;
-      this.visualizer.guard(() => this.visualizer.reverseTraced(this.codeTraceEngine, this.currentLanguage));
-    });
-
-    this.elements.btnReset.addEventListener('click', () => {
-      if (this.visualizer) {
-        if (this.codeTraceEngine) this.codeTraceEngine.reset();
-        this.visualizer.reset([...this.initialValues], this.initialCapacity);
-        const defaultText = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
-        if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = defaultText;
-        const presCodePanel = document.getElementById('presentation-code-content');
-        if (presCodePanel) presCodePanel.textContent = defaultText;
-      }
-    });
-
-    // Step controls
-    this.elements.btnStepForward.addEventListener('click', () => {
-      if (!this.codeTraceEngine || !this.codeTraceEngine.hasMoreSteps) return;
-      this.codeTraceEngine.stepForward();
-    });
-
-    this.isManualMode = false;
-    this.elements.btnToggleMode.addEventListener('click', () => {
-      this.isManualMode = !this.isManualMode;
-      this.elements.btnToggleMode.textContent = `Mode: ${this.isManualMode ? 'Manual' : 'Auto'}`;
-      this.elements.btnStepForward.style.display = this.isManualMode ? 'inline-block' : 'none';
-      if (this.codeTraceEngine) {
-        this.codeTraceEngine.manualMode = this.isManualMode;
-        if (!this.isManualMode && this.codeTraceEngine.isPaused) {
-          this.codeTraceEngine.resume();
-        } else if (this.isManualMode && this.codeTraceEngine.isRunning && !this.codeTraceEngine.isPaused) {
-          this.codeTraceEngine.pause();
-        }
-      }
-    });
-
-    this.elements.btnAbort.addEventListener('click', () => {
-      if (this.visualizer && this.visualizer.busy) {
-        this.visualizer.anim.abort();
-        if (this.codeTraceEngine) {
-           this.codeTraceEngine.resume(); // Unblock if paused
-           this.codeTraceEngine.clearHighlights();
-        }
-        if (this._isLinkedListMode()) {
-           this.visualizer._clearPointerLabels();
-           this.visualizer._clearDecision();
-           this.visualizer._clearFloatingNode();
-           this.visualizer.clearHighlights();
-           this.visualizer.render();
-        }
-      }
-    });
-
     this.elements.codePanelClose.addEventListener('click', () => {
-      this.elements.codePanelContent.textContent = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
+      this.dsController.resetCodePanelText();
     });
 
     // Language switcher
     document.querySelectorAll('.lang-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (this.visualizer && this.visualizer.busy) return;
+        if (this.dsController.visualizer?.busy) return;
+        if (this.presController.visualizer?.busy) return;
 
         const lang = btn.dataset.lang;
         this.currentLanguage = lang;
 
         document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
 
-        if (this.currentOperation) {
-          const { operation, value, index, position, values, capacity } = this.currentOperation;
-          this.updateCodePanel(operation, value, index, position, values, capacity);
-        } else {
-          const defaultText = `// Click on an operation to see the ${lang === 'python' ? 'Python' : 'C'} code`;
-          if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = defaultText;
-          const presCodePanel = document.getElementById('presentation-code-content');
-          if (presCodePanel) presCodePanel.textContent = defaultText;
-        }
+        this._getActiveController()?.refreshCodePanel();
       });
     });
 
@@ -343,7 +292,7 @@ class App {
     const createVizType = document.getElementById('create-viz-type');
     if (createVizType) {
       createVizType.addEventListener('change', (e) => {
-        document.getElementById('create-viz-size-group').style.display = 
+        document.getElementById('create-viz-size-group').style.display =
           e.target.value === 'array' ? 'block' : 'none';
       });
     }
@@ -364,7 +313,7 @@ class App {
     const editVizType = document.getElementById('edit-viz-type');
     if (editVizType) {
       editVizType.addEventListener('change', (e) => {
-        document.getElementById('edit-viz-size-group').style.display = 
+        document.getElementById('edit-viz-size-group').style.display =
           e.target.value === 'array' ? 'block' : 'none';
       });
     }
@@ -405,50 +354,7 @@ class App {
       shareCopyBtn.addEventListener('click', () => this.copyShareLink());
     }
 
-    // Presentation visualizer controls
-    const presTraverse = document.getElementById('presentation-btn-traverse');
-    if (presTraverse) {
-      presTraverse.addEventListener('click', () => {
-        if (this.presentationVisualizer) {
-          this.updateCodePanel('traverse');
-          this.presentationVisualizer.guard(() => this.presentationVisualizer.traverse());
-        }
-      });
-    }
-
-    const presSearch = document.getElementById('presentation-btn-search');
-    if (presSearch) {
-      presSearch.addEventListener('click', () => {
-        if (!this.presentationVisualizer) return;
-        this._promptOperation(
-          'Search',
-          'Find value in the data structure',
-          this.presentationVisualizer.searchDefault,
-          (val) => {
-            this.updateCodePanel('search', val);
-            this.presentationVisualizer.guard(() => this.presentationVisualizer.search(val));
-          }
-        );
-      });
-    }
-
-    const presReset = document.getElementById('presentation-btn-reset');
-    if (presReset) {
-      presReset.addEventListener('click', () => {
-        if (this.presentationVisualizer) {
-          this.presentationVisualizer.reset(
-            [...(this.presentationInitialValues || [10, 20, 30, 40, 50])],
-            this.presentationInitialCapacity
-          );
-          const defaultText = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
-          if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = defaultText;
-          const presCodePanel = document.getElementById('presentation-code-content');
-          if (presCodePanel) presCodePanel.textContent = defaultText;
-        }
-      });
-    }
-
-    // Save config button
+    // Save config button (presentation-only)
     const saveConfigBtn = document.getElementById('presentation-btn-save-config');
     if (saveConfigBtn) {
       saveConfigBtn.addEventListener('click', () => this.saveSlideConfig());
@@ -458,41 +364,6 @@ class App {
   showScreen(name) {
     Object.values(this.screens).forEach((s) => s.classList.remove('active'));
     this.screens[name].classList.add('active');
-  }
-
-  updateCodePanel(operation, value = null, index = null, position = null, values = null, capacity = null) {
-    if (!this.currentModule) return;
-
-    // Store current operation parameters for language switching
-    this.currentOperation = { operation, value, index, position, values, capacity };
-
-    const templates = this.currentLanguage === 'python'
-      ? PythonCodeTemplates[this.currentModule]
-      : CCodeTemplates[this.currentModule];
-    if (!templates || !templates[operation]) return;
-
-    let code;
-    if (operation === 'create') {
-      code = templates.create(values, capacity);
-    } else if (operation === 'insert') {
-      code = templates.insert(index, value, position);
-    } else if (operation === 'delete') {
-      code = templates.delete(index);
-    } else if (operation === 'update') {
-      code = templates.update(index, value);
-    } else if (operation === 'search') {
-      code = templates.search(value);
-    } else if (operation === 'traverse') {
-      code = templates.traverse();
-    } else if (operation === 'highlight') {
-      code = templates.highlight(index);
-    }
-
-    if (code) {
-      if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = code;
-      const presCodePanel = document.getElementById('presentation-code-content');
-      if (presCodePanel) presCodePanel.textContent = code;
-    }
   }
 
   selectModule(module) {
@@ -615,34 +486,13 @@ class App {
   launchVisualizer(values, capacity) {
     this.showScreen('visualizer');
 
-    const { vizContainer, statusMessage } = this.elements;
-
     if (this.currentModule === 'array') {
       this.elements.vizTitle.textContent = 'Array Visualizer';
-      this.visualizer = new ArrayVisualizer(vizContainer, this.anim, statusMessage);
-      this.visualizer.onCellClick = (index) => this.showContextMenu(index, 'array');
-      this.visualizer.init(values, capacity);
-      this.updateCodePanel('create', null, null, null, values, capacity);
-      this.elements.btnReverse.hidden = true;
+      this.dsController.launch('array', values, capacity);
     } else {
       this.elements.vizTitle.textContent = 'Linked List Visualizer';
-      this.visualizer = new LinkedListVisualizer(vizContainer, this.anim, statusMessage);
-      this.visualizer.onNodeClick = (index) => this.showContextMenu(index, 'linkedlist');
-      this.visualizer.init(values);
-      this.updateCodePanel('create', null, null, null, values, null);
-      this.elements.btnReverse.hidden = false;
+      this.dsController.launch('linkedlist', values);
     }
-
-    // Initialize the Code Trace Engine
-    this.codeTraceEngine = new CodeTraceEngine(this.elements.codePanelContent, this.anim);
-    this.codeTraceEngine.manualMode = this.isManualMode || false;
-  }
-
-  /**
-   * Check if the current visualizer is a linked list (supports tracing).
-   */
-  _isLinkedListMode() {
-    return this.currentModule === 'linkedlist' && this.visualizer instanceof LinkedListVisualizer;
   }
 
   _parseValues(str) {
@@ -668,11 +518,11 @@ class App {
     const cellSelector = type === 'array'
       ? `.array-cell[data-index="${index}"]`
       : `.ll-node[data-index="${index}"]`;
-      
+
     const container = this.screens.presentationViewer.classList.contains('active')
       ? document.getElementById('presentation-viz-canvas')
       : this.elements.vizContainer;
-      
+
     const target = container.querySelector(cellSelector);
 
     if (target) {
@@ -695,62 +545,11 @@ class App {
   }
 
   _handleContextAction(action, target) {
-    const viz = this.screens.presentationViewer.classList.contains('active') 
-      ? this.presentationVisualizer 
-      : this.visualizer;
-    if (!viz) return;
-    const { index } = target;
-
-    const useTrace = this._isLinkedListMode() && viz === this.visualizer && this.codeTraceEngine;
-
-    switch (action) {
-      case 'insert-before':
-        this._promptOperation('Insert Before', 'Value to insert?', '99', (val) => {
-          if (useTrace) {
-            viz.guard(() => viz.insertAtTraced(index, val, 'before', this.codeTraceEngine, this.currentLanguage));
-          } else {
-            this.updateCodePanel('insert', val, index, 'before');
-            viz.guard(() => viz.insertAt(index, val, 'before'));
-          }
-        });
-        break;
-      case 'insert-after':
-        this._promptOperation('Insert After', 'Value to insert?', '99', (val) => {
-          if (useTrace) {
-            viz.guard(() => viz.insertAtTraced(index, val, 'after', this.codeTraceEngine, this.currentLanguage));
-          } else {
-            this.updateCodePanel('insert', val, index, 'after');
-            viz.guard(() => viz.insertAt(index, val, 'after'));
-          }
-        });
-        break;
-      case 'delete':
-        if (useTrace) {
-          viz.guard(() => viz.deleteAtTraced(index, this.codeTraceEngine, this.currentLanguage));
-        } else {
-          this.updateCodePanel('delete', null, index);
-          viz.guard(() => viz.deleteAt(index));
-        }
-        break;
-      case 'update': {
-        const current = this.currentModule === 'array'
-          ? viz.data[index]
-          : viz.nodes[index].value;
-        this._promptOperation('Update Value', 'New value?', String(current), (val) => {
-          if (useTrace) {
-            viz.guard(() => viz.updateAtTraced(index, val, this.codeTraceEngine, this.currentLanguage));
-          } else {
-            this.updateCodePanel('update', val, index);
-            viz.guard(() => viz.updateAt(index, val));
-          }
-        });
-        break;
-      }
-      case 'highlight':
-        this.updateCodePanel('highlight', null, index);
-        viz.highlightAt(index);
-        break;
-    }
+    const controller = this.screens.presentationViewer.classList.contains('active')
+      ? this.presController
+      : this.dsController;
+    if (!controller.visualizer) return;
+    controller.handleContextAction(action, target.index);
   }
 
   _promptOperation(title, desc, defaultVal, callback) {
@@ -863,10 +662,10 @@ class App {
     const shareToken = document.getElementById('presentation-share-token').value.trim();
     const vizType = document.getElementById('create-viz-type').value;
     const vizValuesRaw = document.getElementById('create-viz-values').value;
-    
+
     let vizValues = this._parseValues(vizValuesRaw);
     let vizCapacity = null;
-    
+
     if (vizType === 'array') {
       let size = parseInt(document.getElementById('create-viz-size').value, 10);
       size = Number.isNaN(size) || size < 1 ? 5 : Math.min(Math.max(size, 1), 20);
@@ -919,7 +718,7 @@ class App {
   openEditModal(presentationId) {
     const p = this.presentationsData.find(x => x.id === presentationId);
     if (!p) return;
-    
+
     document.getElementById('edit-presentation-id').value = p.id;
     document.getElementById('edit-presentation-title-input').value = p.title;
     document.getElementById('edit-presentation-description').value = p.description || '';
@@ -929,7 +728,7 @@ class App {
     let vizType = 'array';
     let vizValues = '10, 20, 30, 40, 50';
     let vizCapacity = 10;
-    
+
     if (p.slide_configs && p.slide_configs.length > 0) {
       const slide0 = p.slide_configs.find(s => s.slide_number === 0);
       if (slide0) {
@@ -944,7 +743,7 @@ class App {
         }
       }
     }
-    
+
     document.getElementById('edit-viz-type').value = vizType;
     document.getElementById('edit-viz-values').value = vizValues;
     document.getElementById('edit-viz-size').value = vizCapacity;
@@ -961,10 +760,10 @@ class App {
     const shareToken = document.getElementById('edit-presentation-share-token').value.trim();
     const vizType = document.getElementById('edit-viz-type').value;
     const vizValuesRaw = document.getElementById('edit-viz-values').value;
-    
+
     let vizValues = this._parseValues(vizValuesRaw);
     let vizCapacity = null;
-    
+
     if (vizType === 'array') {
       let size = parseInt(document.getElementById('edit-viz-size').value, 10);
       size = Number.isNaN(size) || size < 1 ? 5 : Math.min(Math.max(size, 1), 20);
@@ -1049,9 +848,6 @@ class App {
   }
 
   initPresentationVisualizer(slideConfigs = null) {
-    const vizContainer = document.getElementById('presentation-viz-canvas');
-    const statusMessage = document.getElementById('presentation-status-message');
-
     // Ensure we start in slides mode
     const iframeContainer = document.getElementById('slides-iframe-container');
     const fullVizContainer = document.getElementById('presentation-viz-container');
@@ -1075,26 +871,13 @@ class App {
       }
     }
 
-    this.presentationInitialValues = [...vizValues];
-    this.presentationInitialCapacity = vizCapacity;
-
-    // Set currentModule for code panel operations
+    // Set currentModule for slides/code panel context
     this.currentModule = vizType === 'linkedlist' ? 'linkedlist' : 'array';
 
     if (vizType === 'linkedlist') {
-      this.presentationVisualizer = new LinkedListVisualizer(
-        vizContainer, this.presentationAnim, statusMessage
-      );
-      this.presentationVisualizer.onNodeClick = (index) => this.showContextMenu(index, 'linkedlist');
-      this.presentationVisualizer.init(vizValues);
-      this.updateCodePanel('create', null, null, null, vizValues, null);
+      this.presController.launch('linkedlist', vizValues);
     } else {
-      this.presentationVisualizer = new ArrayVisualizer(
-        vizContainer, this.presentationAnim, statusMessage
-      );
-      this.presentationVisualizer.onCellClick = (index) => this.showContextMenu(index, 'array');
-      this.presentationVisualizer.init(vizValues, vizCapacity);
-      this.updateCodePanel('create', null, null, null, vizValues, vizCapacity);
+      this.presController.launch('array', vizValues, vizCapacity);
     }
   }
 
@@ -1168,20 +951,20 @@ class App {
   }
 
   async saveSlideConfig() {
-    if (!this.currentPresentation || !this.presentationVisualizer) return;
+    if (!this.currentPresentation || !this.presController.visualizer) return;
 
-    const vizType = this.presentationVisualizer instanceof LinkedListVisualizer
-      ? 'linkedlist' : 'array';
+    const viz = this.presController.visualizer;
+    const vizType = viz instanceof LinkedListVisualizer ? 'linkedlist' : 'array';
 
     let vizConfig;
     if (vizType === 'array') {
       vizConfig = {
-        values: [...this.presentationVisualizer.data],
-        capacity: this.presentationVisualizer.capacity,
+        values: [...viz.data],
+        capacity: viz.capacity,
       };
     } else {
       vizConfig = {
-        values: this.presentationVisualizer.nodes.map(n => n.value),
+        values: viz.nodes.map(n => n.value),
       };
     }
 

@@ -174,8 +174,15 @@
             <div class="controls-bar">
               <button class="btn-action" id="presentation-btn-traverse">▶ Traverse</button>
               <button class="btn-action" id="presentation-btn-search">🔍 Search</button>
+              <button class="btn-action" id="presentation-btn-reverse" hidden>🔄 Reverse</button>
               <button class="btn-action" id="presentation-btn-reset">↺ Reset</button>
               <button class="btn-action" id="presentation-btn-save-config">💾 Save Config</button>
+              <div class="step-controls" id="presentation-step-controls">
+                <button class="btn-step" id="presentation-btn-toggle-mode" title="Toggle Mode">Mode: Auto</button>
+                <button class="btn-step" id="presentation-btn-step-forward" title="Step Forward"
+                  style="display: none;">⏭ Step</button>
+                <button class="btn-step" id="presentation-btn-abort" title="Abort">🛑 Abort</button>
+              </div>
               <div class="speed-group">
                 <button class="btn-speed" data-speed="slow">Slow</button>
                 <button class="btn-speed active" data-speed="normal">Normal</button>
@@ -292,7 +299,8 @@
       <label class="modal-label" for="presentation-share-token">Custom URL Path</label>
       <div class="input-group">
         <span class="input-prefix">dst-vis.netlify.app/present/</span>
-        <input type="text" id="presentation-share-token" class="modal-input" placeholder="my-lesson-1" required pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, hyphens, and underscores allowed">
+        <input type="text" id="presentation-share-token" class="modal-input" placeholder="my-lesson-1" required
+          pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, hyphens, and underscores allowed">
       </div>
 
       <label class="modal-label" for="create-viz-type">Data Structure</label>
@@ -319,22 +327,23 @@
     <form class="modal-content" id="edit-presentation-form">
       <h3>Edit Presentation</h3>
       <p class="modal-desc">Update your presentation details</p>
-      
+
       <input type="hidden" id="edit-presentation-id">
-      
+
       <label class="modal-label" for="edit-presentation-title-input">Title</label>
       <input type="text" id="edit-presentation-title-input" class="modal-input" required>
-      
+
       <label class="modal-label" for="edit-presentation-description">Description (optional)</label>
       <input type="text" id="edit-presentation-description" class="modal-input">
-      
+
       <label class="modal-label" for="edit-presentation-url">Google Slides URL</label>
       <input type="url" id="edit-presentation-url" class="modal-input" required>
 
       <label class="modal-label" for="edit-presentation-share-token">Custom URL Path</label>
       <div class="input-group">
         <span class="input-prefix">dst-vis.netlify.app/present/</span>
-        <input type="text" id="edit-presentation-share-token" class="modal-input" required pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, hyphens, and underscores allowed">
+        <input type="text" id="edit-presentation-share-token" class="modal-input" required pattern="[a-zA-Z0-9_-]+"
+          title="Only letters, numbers, hyphens, and underscores allowed">
       </div>
 
       <label class="modal-label" for="edit-viz-type">Data Structure (Slide 1)</label>
@@ -350,7 +359,7 @@
         <label class="modal-label" for="edit-viz-size">Array Size (max 20)</label>
         <input type="number" id="edit-viz-size" class="modal-input" min="1" max="20">
       </div>
-      
+
       <div class="modal-actions">
         <button type="button" class="btn-secondary" id="edit-presentation-cancel">Cancel</button>
         <button type="submit" class="btn-primary" id="edit-presentation-submit">Update</button>
@@ -395,6 +404,7 @@
   <script src="classes/code-trace-engine.js"></script>
   <script src="classes/array-visualizer.js"></script>
   <script src="classes/linked-list-visualizer.js"></script>
+  <script src="classes/visualizer-controller.js"></script>
 
   <!-- Main app -->
   <script src="data/linked-list-trace-steps.js"></script>

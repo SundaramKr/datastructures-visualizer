@@ -1781,6 +1781,7 @@ body.is-animating .btn-action,
 body.is-animating .lang-btn,
 body.is-animating .btn-speed,
 body.is-animating #btn-toggle-mode,
+body.is-animating #presentation-btn-toggle-mode,
 body.is-animating .card-module,
 body.is-animating .code-panel-close {
   pointer-events: none;
