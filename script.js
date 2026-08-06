@@ -17,6 +17,8 @@ class App {
     this._operationCallback = null;
     this.currentLanguage = 'c';
     this.currentOperation = null;
+    this.codeTraceEngine = null; // Initialized in launchVisualizer
+    this._steppingMode = false;  // Manual stepping mode
 
     this.screens = {
       home: document.getElementById('screen-home'),
@@ -46,7 +48,12 @@ class App {
       overlay: document.getElementById('overlay'),
       btnTraverse: document.getElementById('btn-traverse'),
       btnSearch: document.getElementById('btn-search'),
+      btnReverse: document.getElementById('btn-reverse'),
       btnReset: document.getElementById('btn-reset'),
+      btnToggleMode: document.getElementById('btn-toggle-mode'),
+      btnStepForward: document.getElementById('btn-step-forward'),
+      btnAbort: document.getElementById('btn-abort'),
+      stepControls: document.getElementById('step-controls'),
       codePanel: document.getElementById('code-panel'),
       codePanelContent: document.getElementById('code-panel-content'),
       codePanelClose: document.getElementById('code-panel-close'),
@@ -213,7 +220,10 @@ class App {
     });
 
     this.elements.btnTraverse.addEventListener('click', () => {
-      if (this.visualizer) {
+      if (!this.visualizer) return;
+      if (this._isLinkedListMode()) {
+        this.visualizer.guard(() => this.visualizer.traverseTraced(this.codeTraceEngine, this.currentLanguage));
+      } else {
         this.updateCodePanel('traverse');
         this.visualizer.guard(() => this.visualizer.traverse());
       }
@@ -226,19 +236,68 @@ class App {
         `Find value in ${this.currentModule === 'array' ? 'array' : 'linked list'}`,
         this.visualizer.searchDefault,
         (val) => {
-          this.updateCodePanel('search', val);
-          this.visualizer.guard(() => this.visualizer.search(val));
+          if (this._isLinkedListMode()) {
+            this.visualizer.guard(() => this.visualizer.searchTraced(val, this.codeTraceEngine, this.currentLanguage));
+          } else {
+            this.updateCodePanel('search', val);
+            this.visualizer.guard(() => this.visualizer.search(val));
+          }
         }
       );
     });
 
+    // Reverse button (linked list only)
+    this.elements.btnReverse.addEventListener('click', () => {
+      if (!this.visualizer || !this._isLinkedListMode()) return;
+      this.visualizer.guard(() => this.visualizer.reverseTraced(this.codeTraceEngine, this.currentLanguage));
+    });
+
     this.elements.btnReset.addEventListener('click', () => {
       if (this.visualizer) {
+        if (this.codeTraceEngine) this.codeTraceEngine.reset();
         this.visualizer.reset([...this.initialValues], this.initialCapacity);
         const defaultText = `// Click on an operation to see the ${this.currentLanguage === 'python' ? 'Python' : 'C'} code`;
         if (this.elements.codePanelContent) this.elements.codePanelContent.textContent = defaultText;
         const presCodePanel = document.getElementById('presentation-code-content');
         if (presCodePanel) presCodePanel.textContent = defaultText;
+      }
+    });
+
+    // Step controls
+    this.elements.btnStepForward.addEventListener('click', () => {
+      if (!this.codeTraceEngine || !this.codeTraceEngine.hasMoreSteps) return;
+      this.codeTraceEngine.stepForward();
+    });
+
+    this.isManualMode = false;
+    this.elements.btnToggleMode.addEventListener('click', () => {
+      this.isManualMode = !this.isManualMode;
+      this.elements.btnToggleMode.textContent = `Mode: ${this.isManualMode ? 'Manual' : 'Auto'}`;
+      this.elements.btnStepForward.style.display = this.isManualMode ? 'inline-block' : 'none';
+      if (this.codeTraceEngine) {
+        this.codeTraceEngine.manualMode = this.isManualMode;
+        if (!this.isManualMode && this.codeTraceEngine.isPaused) {
+          this.codeTraceEngine.resume();
+        } else if (this.isManualMode && this.codeTraceEngine.isRunning && !this.codeTraceEngine.isPaused) {
+          this.codeTraceEngine.pause();
+        }
+      }
+    });
+
+    this.elements.btnAbort.addEventListener('click', () => {
+      if (this.visualizer && this.visualizer.busy) {
+        this.visualizer.anim.abort();
+        if (this.codeTraceEngine) {
+           this.codeTraceEngine.resume(); // Unblock if paused
+           this.codeTraceEngine.clearHighlights();
+        }
+        if (this._isLinkedListMode()) {
+           this.visualizer._clearPointerLabels();
+           this.visualizer._clearDecision();
+           this.visualizer._clearFloatingNode();
+           this.visualizer.clearHighlights();
+           this.visualizer.render();
+        }
       }
     });
 
@@ -249,6 +308,8 @@ class App {
     // Language switcher
     document.querySelectorAll('.lang-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (this.visualizer && this.visualizer.busy) return;
+
         const lang = btn.dataset.lang;
         this.currentLanguage = lang;
 
@@ -562,13 +623,26 @@ class App {
       this.visualizer.onCellClick = (index) => this.showContextMenu(index, 'array');
       this.visualizer.init(values, capacity);
       this.updateCodePanel('create', null, null, null, values, capacity);
+      this.elements.btnReverse.hidden = true;
     } else {
       this.elements.vizTitle.textContent = 'Linked List Visualizer';
       this.visualizer = new LinkedListVisualizer(vizContainer, this.anim, statusMessage);
       this.visualizer.onNodeClick = (index) => this.showContextMenu(index, 'linkedlist');
       this.visualizer.init(values);
       this.updateCodePanel('create', null, null, null, values, null);
+      this.elements.btnReverse.hidden = false;
     }
+
+    // Initialize the Code Trace Engine
+    this.codeTraceEngine = new CodeTraceEngine(this.elements.codePanelContent, this.anim);
+    this.codeTraceEngine.manualMode = this.isManualMode || false;
+  }
+
+  /**
+   * Check if the current visualizer is a linked list (supports tracing).
+   */
+  _isLinkedListMode() {
+    return this.currentModule === 'linkedlist' && this.visualizer instanceof LinkedListVisualizer;
   }
 
   _parseValues(str) {
@@ -627,30 +701,48 @@ class App {
     if (!viz) return;
     const { index } = target;
 
+    const useTrace = this._isLinkedListMode() && viz === this.visualizer && this.codeTraceEngine;
+
     switch (action) {
       case 'insert-before':
         this._promptOperation('Insert Before', 'Value to insert?', '99', (val) => {
-          this.updateCodePanel('insert', val, index, 'before');
-          viz.guard(() => viz.insertAt(index, val, 'before'));
+          if (useTrace) {
+            viz.guard(() => viz.insertAtTraced(index, val, 'before', this.codeTraceEngine, this.currentLanguage));
+          } else {
+            this.updateCodePanel('insert', val, index, 'before');
+            viz.guard(() => viz.insertAt(index, val, 'before'));
+          }
         });
         break;
       case 'insert-after':
         this._promptOperation('Insert After', 'Value to insert?', '99', (val) => {
-          this.updateCodePanel('insert', val, index, 'after');
-          viz.guard(() => viz.insertAt(index, val, 'after'));
+          if (useTrace) {
+            viz.guard(() => viz.insertAtTraced(index, val, 'after', this.codeTraceEngine, this.currentLanguage));
+          } else {
+            this.updateCodePanel('insert', val, index, 'after');
+            viz.guard(() => viz.insertAt(index, val, 'after'));
+          }
         });
         break;
       case 'delete':
-        this.updateCodePanel('delete', null, index);
-        viz.guard(() => viz.deleteAt(index));
+        if (useTrace) {
+          viz.guard(() => viz.deleteAtTraced(index, this.codeTraceEngine, this.currentLanguage));
+        } else {
+          this.updateCodePanel('delete', null, index);
+          viz.guard(() => viz.deleteAt(index));
+        }
         break;
       case 'update': {
         const current = this.currentModule === 'array'
           ? viz.data[index]
           : viz.nodes[index].value;
         this._promptOperation('Update Value', 'New value?', String(current), (val) => {
-          this.updateCodePanel('update', val, index);
-          viz.guard(() => viz.updateAt(index, val));
+          if (useTrace) {
+            viz.guard(() => viz.updateAtTraced(index, val, this.codeTraceEngine, this.currentLanguage));
+          } else {
+            this.updateCodePanel('update', val, index);
+            viz.guard(() => viz.updateAt(index, val));
+          }
         });
         break;
       }

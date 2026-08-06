@@ -216,7 +216,13 @@
           <div class="controls-bar">
             <button class="btn-action" id="btn-traverse">▶ Traverse</button>
             <button class="btn-action" id="btn-search">🔍 Search</button>
+            <button class="btn-action" id="btn-reverse" hidden>🔄 Reverse</button>
             <button class="btn-action" id="btn-reset">↺ Reset</button>
+            <div class="step-controls" id="step-controls">
+              <button class="btn-step" id="btn-toggle-mode" title="Toggle Mode">Mode: Auto</button>
+              <button class="btn-step" id="btn-step-forward" title="Step Forward" style="display: none;">⏭ Step</button>
+              <button class="btn-step" id="btn-abort" title="Abort">🛑 Abort</button>
+            </div>
             <div class="speed-group">
               <button class="btn-speed" data-speed="slow">Slow</button>
               <button class="btn-speed active" data-speed="normal">Normal</button>
@@ -386,10 +392,12 @@
   <script src="classes/linked-list-node.js"></script>
   <script src="classes/animation-controller.js"></script>
   <script src="classes/base-visualizer.js"></script>
+  <script src="classes/code-trace-engine.js"></script>
   <script src="classes/array-visualizer.js"></script>
   <script src="classes/linked-list-visualizer.js"></script>
 
   <!-- Main app -->
+  <script src="data/linked-list-trace-steps.js"></script>
   <script src="script.js"></script>
 
   <!-- Auth (loads after App class) -->

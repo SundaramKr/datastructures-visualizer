@@ -15,6 +15,10 @@ class LinkedListVisualizer extends BaseVisualizer {
     this.nodes = [];
     this.searchDefault = '40';
     this.onNodeClick = null;
+    this._traceNewNode = null;
+    this._floatingNode = null;
+    this._pointerLabels = [];
+    this._decisionState = null;
   }
 
   _uniqueAddress() {
@@ -53,10 +57,125 @@ class LinkedListVisualizer extends BaseVisualizer {
     return node.next ? node.next.address : 'null';
   }
 
+  // ===== Trace Helper Methods =====
+
+  /**
+   * Create a new node for tracing (not yet added to the list).
+   */
+  _createTracedNode(value) {
+    const node = new LinkedListNode(value, this._uniqueAddress(), LinkedListVisualizer.nextId++);
+    return node;
+  }
+
+  /**
+   * Render the main list with a floating (unlinked) node shown above.
+   */
+  _renderWithFloatingNode(node, displayValue, nextLabel, labels) {
+    this._floatingNode = { node, displayValue, nextLabel, labels: labels || [] };
+    this.render();
+  }
+
+  /**
+   * Clear the floating node display.
+   */
+  _clearFloatingNode() {
+    this._floatingNode = null;
+  }
+
+  /**
+   * Add pointer labels (temp, newNode, head, current, prev) to specific nodes.
+   * @param {Array<{nodeIndex: number, labels: string[]}>} labelDefs
+   */
+  _addPointerLabels(labelDefs) {
+    this._pointerLabels = labelDefs;
+    // Re-render labels without full re-render
+    this._renderPointerLabelsDOM();
+  }
+
+  /**
+   * Clear all pointer labels.
+   */
+  _clearPointerLabels() {
+    this._pointerLabels = [];
+    this.container.querySelectorAll('.ll-pointer-label').forEach(el => el.remove());
+  }
+
+  /**
+   * Render pointer label elements onto existing nodes.
+   */
+  _renderPointerLabelsDOM() {
+    // Remove existing labels
+    this.container.querySelectorAll('.ll-pointer-label').forEach(el => el.remove());
+
+    this._pointerLabels.forEach(({ nodeIndex, labels }) => {
+      const wrapper = this.container.querySelector(`.ll-node-wrapper[data-index="${nodeIndex}"]`);
+      if (wrapper) {
+        const labelContainer = document.createElement('div');
+        labelContainer.className = 'll-pointer-label';
+        labels.forEach(label => {
+          const span = document.createElement('span');
+          span.className = 'll-ptr-tag';
+          span.textContent = label;
+          labelContainer.appendChild(span);
+        });
+        wrapper.appendChild(labelContainer);
+      }
+    });
+  }
+
+  /**
+   * Show a decision indicator (✓ or ✗) for condition checks.
+   */
+  _showDecision(result, expression) {
+    this._decisionState = { result, expression };
+    // Render the decision badge
+    let badge = this.container.querySelector('.ll-decision-badge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.className = 'll-decision-badge';
+      this.container.appendChild(badge);
+    }
+    badge.className = `ll-decision-badge ${result ? 'decision-true' : 'decision-false'}`;
+    badge.innerHTML = `<span class="decision-icon">${result ? '✓' : '✗'}</span> <span class="decision-expr">${expression}</span>`;
+  }
+
+  /**
+   * Clear the decision indicator.
+   */
+  _clearDecision() {
+    this._decisionState = null;
+    const badge = this.container.querySelector('.ll-decision-badge');
+    if (badge) badge.remove();
+  }
+
+  // ===== Core Render =====
+
   render() {
     const headTarget = this.head ? this.head.address : 'null';
 
-    let html = `
+    let html = '';
+
+    // Floating node (newly allocated, not yet linked)
+    if (this._floatingNode) {
+      const { node, displayValue, nextLabel, labels } = this._floatingNode;
+      html += `
+        <div class="ll-floating-node">
+          <div class="ll-floating-label">Newly Allocated</div>
+          <div class="ll-node-wrapper" data-floating="true">
+            <div class="ll-node-group">
+              <div class="ll-node inserting" data-floating="true">
+                <div class="ll-data">${displayValue}</div>
+                <div class="ll-pointer" title="Points to next node">${nextLabel}</div>
+              </div>
+            </div>
+            <span class="ll-address">@ ${node.address}</span>
+            ${labels.length > 0 ? `<div class="ll-pointer-label">${labels.map(l => `<span class="ll-ptr-tag">${l}</span>`).join('')}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
       <div class="linkedlist-viz">
         <div class="ll-nodes-row">
           <div class="ll-head-item">
@@ -90,12 +209,23 @@ class LinkedListVisualizer extends BaseVisualizer {
 
     this.container.innerHTML = html;
 
-    this.container.querySelectorAll('.ll-node').forEach((nodeEl) => {
+    // Re-attach click handlers
+    this.container.querySelectorAll('.ll-node:not([data-floating])').forEach((nodeEl) => {
       nodeEl.addEventListener('click', (e) => {
         e.stopPropagation();
         if (this.onNodeClick) this.onNodeClick(parseInt(nodeEl.dataset.index, 10), nodeEl);
       });
     });
+
+    // Re-render pointer labels if any
+    if (this._pointerLabels.length > 0) {
+      this._renderPointerLabelsDOM();
+    }
+
+    // Re-render decision badge if any
+    if (this._decisionState) {
+      this._showDecision(this._decisionState.result, this._decisionState.expression);
+    }
   }
 
   highlightNode(index, className) {
@@ -109,6 +239,8 @@ class LinkedListVisualizer extends BaseVisualizer {
       this.container.querySelectorAll(`.${cls}`).forEach((el) => el.classList.remove(cls));
     });
   }
+
+  // ===== Original Operations (preserved for backward compatibility) =====
 
   async insertAt(index, value, position) {
     const insertIdx = position === 'before' ? index : index + 1;
@@ -231,8 +363,110 @@ class LinkedListVisualizer extends BaseVisualizer {
     this.setStatus(`${target} not found in the linked list.`);
   }
 
+  // ===== Traced Operations (step-by-step with code highlighting) =====
+
+  /**
+   * Insert with step-by-step code tracing.
+   * Uses LinkedListTraceSteps to generate steps, then executes via CodeTraceEngine.
+   */
+  async insertAtTraced(index, value, position, traceEngine, language) {
+    const lang = language || 'c';
+    const insertIdx = position === 'before' ? index : index + 1;
+    const isAtEnd = insertIdx >= this.nodes.length;
+
+    let traceData;
+    if (isAtEnd && (insertIdx === 0 || insertIdx === this.nodes.length)) {
+      // Use the simple insert (end-of-list) for cleaner code
+      const isFirst = this.nodes.length === 0;
+      traceData = LinkedListTraceSteps[lang].insert(this, value, isFirst);
+    } else {
+      traceData = LinkedListTraceSteps[lang].insertAt(this, index, value, position);
+    }
+
+    traceEngine.loadSteps(traceData.codeLines, traceData.steps);
+    await traceEngine.execute();
+  }
+
+  /**
+   * Delete with step-by-step code tracing.
+   */
+  async deleteAtTraced(index, traceEngine, language) {
+    const lang = language || 'c';
+    const traceData = LinkedListTraceSteps[lang].delete(this, index);
+    traceEngine.loadSteps(traceData.codeLines, traceData.steps);
+    await traceEngine.execute();
+  }
+
+  /**
+   * Traverse with step-by-step code tracing.
+   */
+  async traverseTraced(traceEngine, language) {
+    const lang = language || 'c';
+    this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
+    const traceData = LinkedListTraceSteps[lang].traverse(this);
+    traceEngine.loadSteps(traceData.codeLines, traceData.steps);
+    await traceEngine.execute();
+  }
+
+  /**
+   * Search with step-by-step code tracing.
+   */
+  async searchTraced(target, traceEngine, language) {
+    const lang = language || 'c';
+    this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
+    const traceData = LinkedListTraceSteps[lang].search(this, target);
+    traceEngine.loadSteps(traceData.codeLines, traceData.steps);
+    await traceEngine.execute();
+  }
+
+  /**
+   * Update with step-by-step code tracing.
+   */
+  async updateAtTraced(index, value, traceEngine, language) {
+    const lang = language || 'c';
+    const traceData = LinkedListTraceSteps[lang].update(this, index, value);
+    traceEngine.loadSteps(traceData.codeLines, traceData.steps);
+    await traceEngine.execute();
+  }
+
+  /**
+   * Reverse with step-by-step code tracing (new operation!).
+   */
+  async reverseTraced(traceEngine, language) {
+    const lang = language || 'c';
+    this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
+    const traceData = LinkedListTraceSteps[lang].reverse(this);
+    traceEngine.loadSteps(traceData.codeLines, traceData.steps);
+    await traceEngine.execute();
+  }
+
+  /**
+   * Reverse without tracing (simple version).
+   */
+  async reverse() {
+    this.clearHighlights('visiting', 'comparing', 'found', 'highlighted');
+
+    for (let i = 0; i < this.nodes.length; i++) {
+      if (this.anim._abort) break;
+      this.clearHighlights('visiting');
+      this.highlightNode(i, 'visiting');
+      this.setStatus(`Processing node ${i} for reversal…`);
+      await this.anim.wait();
+    }
+
+    this.nodes.reverse();
+    this._linkNodes();
+    this.render();
+    this.clearHighlights('visiting');
+    this.setStatus('Linked list reversed successfully.');
+  }
+
   reset(values) {
     this.anim.abort();
+    this._clearPointerLabels();
+    this._clearDecision();
+    this._clearFloatingNode();
+    this._traceNewNode = null;
     this.init(values);
   }
 }
